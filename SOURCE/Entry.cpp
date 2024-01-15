@@ -1,190 +1,192 @@
+#include <algorithm>
 #include <iostream>
+#include <iomanip>
+#include <fstream>
 #include <string>
 #include <thread>
+#include <atomic>
+#include <chrono>
+#include <map>
 
-#include "../LIBRARIES/lodepng/lodepng.h"
-
+#include "CommandLineInterface.h"
+#include "ImageEncoder.h"
 #include "Common.h"
-#include "Canvas.h"
+
+#include "Types/Vector.h"
+#include "Types/Ant.h"
 
 
-// Cube (4 Sides)
-enum class Direction4 : int8_t {
-	N =  0, // No movement
-	R =  2, // Right
-	L = -2, // Left
-};
 
 
-// To change grid pattern use this (Note that re-rendering would be needed for different types of grids)
-//constexpr auto c_DirectionTable = c_DirectionTable4;
-using Direction = Direction4;
+std::string StateMachineToString(const DirectionEnum* StateMachine, size_t Size, const char* Separator="") {
+	std::string NewString;
+	
+	NewString.reserve(Size * 3);
 
+	for (size_t i = 0; i < Size; i++)
+		NewString += std::string(DirectionStrings[int8_t(StateMachine[i]) + 3]) + std::string((i + 1 != Size) ? Separator : "");
 
-constexpr int8_t c_ReverseLookup[] = { 4, 5, 6, 7, 0, 1, 2, 3 };
-
-// We could use 8-bit per cell but that would leave us with only 32 states and 4 directions
-// So we use 16-bit per cell which allows for 256 states and 8+ directions
-// Directions:
-// 7 0 1
-// 6 o 2
-// 5 4 3
-struct Cell {
-	int8_t Direction = 0;
-	bool Control = false;
-
-	uint8_t State = 0;
-
-	FORCE_INLINE void Deserialize(uint16_t Input) {
-		this->State = uint8_t(Input & 0xFF);
-		
-		uint8_t High = uint8_t(Input >> 8);
-		this->Direction = int8_t(High & 3);
-		this->Control = bool(High >> 3);
-	}
-
-	FORCE_INLINE uint16_t Serialize() {
-		return uint16_t((((this->Control << 3) | (this->Direction % 8)) << 8) | this->State);
-	}
-
-	Cell(uint16_t Input) { this->Deserialize(Input); }
-};
-
-FORCE_INLINE uint32_t GetColor(uint16_t Input) {
-	uint32_t S = uint8_t(Input & 0xFF); XOR_SHIFT32(S); S *= 0x9E3779B9;
-	return S;
+	return NewString;
 }
 
-
-struct {
-	Canvas<uint16_t, int8_t, size_t> GlobalCanvas;
-
-	using enum Direction;
-	Direction StateMachine[255] = { N };
-	uint8_t StateMachineSize = 0;
-
-	uint16_t Threads = 0;
-	uint16_t Working = 0;
-} g_State;
+template<typename AntType>
+FORCE_INLINE void IterateAnts(std::vector<AntType>& AntList) {}
 
 
+template<typename Type, typename SizeType=size_t>
+void BuildPossibilityList(std::vector<std::vector<Type>>& List, SizeType Size, Type* Dictionary, SizeType DictionarySize) {
+	Type* Current = new Type[Size];
+	SizeType* Counters = new SizeType[Size]{ 0 };
 
-// @todo
-/*
-bool ParseArguments(int ArgCount, const char* Args[]) {
-	for (int i = 0; i < ArgCount; i++) {
-		const char
-			*Current = Args[i],
-			*Next = (i + 1 < ArgCount) ? Args[i + 1] : nullptr;
+	for (SizeType i = 0; i < Size; i++) Current[i] = Dictionary[0];
+
+	while (Counters[Size - 1] < DictionarySize) {
 		
-		if (strlen(Current) < 2) continue; // Invalid argument
+		for (SizeType i = 0; i < Size; i++) Current[i] = Dictionary[Counters[i]];
+		List.push_back(std::vector<Type>(Current, Current + Size));
 
-		bool SingleArgument = Current[0] == '-' && Current[1] != '-'; // "-X" Argument type
-		bool DoubleArgument = Current[0] == '-' && Current[1] == '-'; // "--X" Argument type
-
-		if (SingleArgument) {
-			Current += 1;
-
-			switch (*Current) {
-				case 'x': g_State.Size.X = std::stoi(Next); break;
-				case 'y': g_State.Size.Y = std::stoi(Next); break;
-				case 't': g_State.Threads = std::stoi(Next); break;
-				case 'p'
+		Counters[0]++;
+		for (SizeType i = 0; i < Size; i++) {
+			if (i + 1 < Size && Counters[i] >= DictionarySize) {
+				Counters[i] = 0;
+				Counters[i + 1]++;
 			}
 		}
-		else if (DoubleArgument) {
-			Current += 2;
-			// lookup table time ig?
-		}
 	}
-}
-*/
 
-
-
-void ComputeCell(uint16_t* CP, uint16_t* Neighbors[8]) {
-	Cell C = Cell(*CP);
-
-	for (size_t n = 0; n < sizeof(Neighbors) / sizeof(Cell); n++) {
-		uint16_t* NP = Neighbors[n];
-		
-		Cell N = Cell(*NP);
-		
-		if (N.Control && N.Direction == c_ReverseLookup[n]) {
-			// Update self
-			C.Direction = (8 + N.Direction + (int8_t)g_State.StateMachine[C.State]) % 8;
-			C.Control = true;
-			*CP = C.Serialize();
-
-			// Update neighbor
-			N.State = (N.State + 1) % g_State.StateMachineSize;
-			N.Control = false;
-			*NP = N.Serialize();
-			break;
-		}
-	}
+	delete[] Counters;
+	delete[] Current;
 }
 
 int main(int ArgCount, const char* Args[]) {
-	using enum Direction;
-	Direction StateMachine[] = {
+	using enum DirectionEnum;
+	DirectionEnum StateMachine[] = {
 		//R,R,L,L,L,R,L,L,L,R,R,R // Creates a filled triangle shape
 		//L,L,R,R,R,L,R,L,R,L,L,R // Creates a convoluted highway
-		//L,R,R,R,R,R,L,L,R // Fills space in a square around itself
+		L,R,R,R,R,R,L,L,R // Fills space in a square around itself
 		//L,L,R,R // Grows symmetrically
-		//R,L,R // Growns chaotically
+		//R,L,R // Grows chaotically
 		
-		R,L // Default Langton's ant
+		//R,R,L,L,R,L,L,L,R
+		//R,U,R,L,R,U
+		//R,L,L,L,R,L,R,R,L,L,R,R,R // Similar to LRRRRRLLR but halts growth by iteration 8477782376
+
+		//R,L // Default Langton's ant
 	};
 
-	memcpy(g_State.StateMachine, StateMachine, sizeof(StateMachine));
-	g_State.StateMachineSize = sizeof(StateMachine) / sizeof(Direction);
-	
-	g_State.Threads = std::thread::hardware_concurrency();
+	size_t StateMachineSize = sizeof(StateMachine) / sizeof(DirectionEnum);
 
 
-	auto Canvas = g_State.GlobalCanvas;
+	Vector2<int> CanvasSize = { 30720, 17280 };
 
-	Canvas.Size.X = 5000; Canvas.Size.Y = 5000; // 250000
-	Canvas.Allocate(1);
-	auto* Buffer = Canvas.Buffer();
+	uint8_t* CanvasPointer = new uint8_t[CanvasSize.X * CanvasSize.Y]{ 0 };
 
-	uint8_t* Image = new uint8_t[Canvas.Size.X * Canvas.Size.Y * 3];
+
+	std::cout << "State machine: " << StateMachineToString(StateMachine, StateMachineSize, "") << '\n';
 
 	lodepng::State EncoderState;
-	EncoderState.info_raw.colortype = LCT_RGB;
-	EncoderState.info_raw.bitdepth = 8;
+	ImageEncoder::SetupEncoderState<uint8_t>(&EncoderState, StateMachineSize);
+	
+	auto Center = CanvasSize / Vector2(2, 2);
 
-	for (size_t i = 0; i < 12000; i++) {
-		//Canvas.NextBuffer(1); auto* ReadBuffer = Canvas.Buffer();
-		//Canvas.NextBuffer(1); auto* WriteBuffer = Canvas.Buffer();
+	/*
+	std::vector<Ant<uint8_t>> Ants = {};
+	Ants.push_back(Ant<uint8_t>(Center + Vector2(0, 10), Vector2<int8_t>(0, -1), StateMachine, StateMachineSize));
+	Ants.push_back(Ant<uint8_t>(Center - Vector2(0, 10), Vector2<int8_t>(0,  1), StateMachine, StateMachineSize));
 
-		for (size_t X = 0; X++; X < Canvas.Size.X) {
-			for (size_t Y = 0; Y++; Y < Canvas.Size.Y) {
-				uint16_t Zero = 0; // Invalid Cell Pointer
-				
-				// Use overflows to our advantage
-				#define N(OX, OY) (X + OX > Canvas.Size.X || Y + OY > Canvas.Size.Y) ? &Zero : Buffer + INDEX_2D_FROM_XY(X + OX, Y + OY, Canvas.Size.X)
-				
+	Ants.push_back(Ant<uint8_t>(Center + Vector2(10, 0), Vector2<int8_t>(-1, 0), StateMachine, StateMachineSize));
+	Ants.push_back(Ant<uint8_t>(Center - Vector2(10, 0), Vector2<int8_t>( 1, 0), StateMachine, StateMachineSize));
+	//*/
+	
+	auto AntObject = Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), StateMachine, StateMachineSize);
 
-				uint16_t* Neighbors[8] = {
-					N(1,  1), N(0,  1), N(-1,  1),
-					N(1,  0),           N(-1,  0),
-					N(1, -1), N(0, -1), N(-1, -1)
-				};
-				uint16_t* Center = N(0, 0);
+	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 output.mp4
+	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 -s 1920x1920 output.mp4
+	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 -s 1920x1920 -sws_flags neighbor output.mp4
+	// ffmpeg -r 30 -i "Frames/%d.png" -c:v libx264 -preset veryslow -qp 0 -s 7680x4320 output.mp4
 
-				ComputeCell(Center, Neighbors);
+	double Iterations = 1292334158; // Iterations 50000000000 (50b) 5000000000 (5b) 500000000 (500m) 50000000 (50m)
+	double Time = 240.0; // Video time
+	double Rate = 30.0; // Video frame rate
+	
+	auto CurrentSize = Vector2(CanvasSize.X, CanvasSize.Y);//Vector2(CanvasSize.X, CanvasSize.Y);
+	std::atomic<size_t> Running = 0;
+	size_t CaptureDelta = size_t(Iterations / (Time * Rate));
+	for (size_t i = 0; i < size_t(Iterations); i++) {
 
-				uint32_t Color = GetColor(*Center);
-				auto Index = INDEX_2D_FROM_XY(X, Y, Canvas.Size.X);
-				Image[Index + 0] = (Color & 0x0000FF) >> 0;
-				Image[Index + 1] = (Color & 0x00FF00) >> 8;
-				Image[Index + 2] = (Color & 0xFF0000) >> 16;
-			}
+		/*
+		bool Stop = false;
+		for (auto& AntObject : Ants) AntObject.UpdatePosition(CanvasPointer, CanvasSize, false);
+		for (auto& AntObject : Ants) if (!AntObject.UpdateCell(CanvasPointer, CanvasSize)) { Stop = true; break; }
+		//*/
+		
+		if (!AntObject.Update(CanvasPointer, CanvasSize)) { std::cout << "Ant out of bounds at i:" << i << '\n'; break; }
+		//std::cout << "i:" << i << " x:" << AntObject.Position.X << " y:" << AntObject.Position.Y << '\n';
+		
+		/*
+		bool B0 = AntObject.Position.X > (CanvasSize.X / 2) + (CurrentSize.X / 2) || AntObject.Position.Y > (CanvasSize.Y / 2) + (CurrentSize.Y / 2);
+		bool B1 = AntObject.Position.X < (CanvasSize.X / 2) - (CurrentSize.X / 2) || AntObject.Position.Y < (CanvasSize.Y / 2) - (CurrentSize.Y / 2);
+		if (B0 + B1) {
+			//std::cout << "x:" << (int)CurrentSize.X << " y:" << (int)CurrentSize.Y << " i:" << i << '\n';
+			CurrentSize.X += 1;//CanvasSize.X / 100;
+			CurrentSize.Y += 1;//CanvasSize.Y / 100;
 		}
-		lodepng::encode(std::to_string(i) + ".png", Image, Canvas.Size.X, Canvas.Size.Y);
+		//*/
+
+		/*
+		if (i % 1000000 == 0) { // 1000000000 (1b) 100000000 (100m) 1000000 (1m)
+			std::cout << "Encoding canvas state i:" << i << "\n";
+			
+			while (Running >= 2) {}
+			ImageEncoder::SaveCanvasAsync(
+				CanvasPointer,
+				CanvasSize,
+				EncoderState,
+				"Frames/STATE_" + std::to_string(i/1000000) + ".png",
+				Running
+			);
+		}
+		//*/
+
+		///*
+		if (i % CaptureDelta == 0) {
+			std::cout << "Capturing frame i:" << i << " f:" << i / CaptureDelta << '\n';
+
+			while (Running > 6) {}
+			/*
+			ImageEncoder::SaveCanvasAsync(
+				CanvasPointer,
+				CanvasSize,
+				Vector2((CanvasSize.X / 2) - (CurrentSize.X / 2), (CanvasSize.Y / 2) - (CurrentSize.Y / 2)),
+				CurrentSize,
+				EncoderState,
+				"Frames/" + std::to_string(i / CaptureDelta) + ".png",
+				Running
+			);
+			//*/
+			ImageEncoder::SaveCanvasAsync(
+				CanvasPointer,
+				CanvasSize,
+				EncoderState,
+				"Frames/" + std::to_string(i / CaptureDelta) + ".png",
+				Running
+			);
+		}
+		//*/
+
+		//if (Stop) { std::cout << "Stopping at i:" << i << '\n'; break; }
 	}
 
-	Canvas.Deallocate(1);
+	std::cout << "Encoding final canvas state...\n";
+	ImageEncoder::SaveCanvas(
+		CanvasPointer,
+		CanvasSize,
+		EncoderState,
+		"Frames/FINAL.png"
+	);
+
+	std::cout << "Waiting for encoder threads to stop...\n";
+	while (Running > 0) {}
+
+	delete[] CanvasPointer;
 }

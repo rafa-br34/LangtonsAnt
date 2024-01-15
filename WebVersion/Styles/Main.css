@@ -1,0 +1,53 @@
+:root {
+	--Background: rgb(30, 30, 30);
+	--Foreground: rgb(60, 60, 60);
+	--Text: rgb(255, 255, 255);
+}
+
+* {
+	font-family: 'Fira Code Retina', Courier, monospace;
+}
+
+body {
+	background-color: var(--Background);
+	display: inline-flex;
+	margin: 0px;
+	overflow: hidden;
+}
+
+button {
+	border: 1px solid;
+	border-radius: 2px;
+
+	background: var(--Foreground);
+	color: var(--Text);
+}
+
+span {
+	color: var(--Text);
+}
+
+
+#MainCanvas {
+	width: 100%;
+	height: 0;
+	padding-bottom: 100%;
+}
+
+#CanvasContainer {
+	display: grid;
+	width: calc(100vh - 100px);
+	max-width: calc(100vh - 100px);
+	height: calc(100vh - 4px);
+	border: var(--Text) 1px solid;
+	padding: 1px;
+}
+
+#ManagerContainer {
+	display: grid;
+	width: calc(calc(100vw - calc(100vh - 100px)) - 7px);
+	height: calc(100vh - 4px);
+	border: var(--Text) 1px solid;
+	padding: 1px; position: relative;
+	left: -1px;
+}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Langton's ant and Turmites</title>
+
+		<meta property="og:title" content="Langton's ant and Turmites"/>
+		<meta property="og:type" content="website"/>
+		<meta property="og:url" content="https://rafa-br34.github.io/LangtonsAnt"/>
+
+		<meta property="og:description" content="A web implementation of Langton's ant and Turmites"/>
+		<meta property="og:site_name" content="Langton's ant and Turmites"/>
+		
+		<!-- Image (og:image is required, the rest is optional) -->
+		<meta property="og:image" content="ThumbnailLink"/>
+		<meta property="og:image:alt" content="ImageDescription"/> <!-- Should be the same as description(?) -->
+		<meta property="og:image:url" content="SameAsOgImage"/>
+		<meta property="og:image:secure_url" content="HTTPSVersionOfOgImage"/>
+		<meta property="og:image:type" content="image/*"/> <!-- Let the consumer decide -->
+
+		<meta property="twitter:url" content="https://rafa-br34.github.io/LangtonsAnt"/>
+		<meta property="twitter:card" content="summary_large_image"/>
+		<meta property="twitter:title" content="Langton's ant and Turmites"/>
+		<meta property="twitter:image" content="ThumbnailLink"/>
+		<meta property="twitter:description" content="A web implementation of Langton's ant and Turmites"/>
+	
+		<!-- Cache control -->
+		<meta http-equiv="Expires" content="0">
+		<meta http-equiv="Pragma" content="no-cache">
+		<meta http-equiv="Cache-Control" content="no-cache">
+	
+		<!-- Search engines -->
+		<meta name="description" content="A web implementation of Langton's ant and Turmites">
+		<meta name="keywords" content="cellular automata, langton's ant, langtons ant, turmites, turmite">
+		<meta name="author" content="rafa_br34">
+
+		<link rel="stylesheet" href="Styles/Main.css">
+		<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+		<script src="Script.js"></script>
+	</head>
+	<body>
+		<div id="CanvasContainer">
+			<canvas id="MainCanvas" width="1000" height="1000"></canvas>
+			
+			<div style="display: inline-grid; grid-template-columns: repeat(4, 1fr); gap: 1px; padding-top: 2px">
+				<button id="SaveImage">Save Image</button>
+				<button id="SaveImage">A</button>
+				<button id="SaveImage">B</button>
+				<button id="SaveImage">C</button>
+			</div>
+
+			<div style="display: inline-grid; grid-template-columns: repeat(2, 1fr); padding-top: 2px">
+				<span>FPS: 0</span>
+				<span>IPS: 0</span>
+				<span>Entropy: 0.00</span>
+				<span>Iteration: 0</span>
+			</div>
+		</div>
+
+		<div id="ManagerContainer">
+			<!-- Ants -->
+			<div>
+
+			</div>
+
+			<!-- Rules -->
+			<div>
+
+			</div>
+		</div>
+	</body>
+</html>
