@@ -37,36 +37,68 @@
 
 		<link rel="stylesheet" href="Styles/Main.css">
 		<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-		<script src="Script.js"></script>
+		
+		<script src="Scripts/Debug.js"></script>
+		
+		<script src="Scripts/Renderer.js"></script>
+		<script src="Scripts/Main.js"></script>
+		<script src="Scripts/Ant.js"></script>
 	</head>
 	<body>
 		<div id="CanvasContainer">
-			<canvas id="MainCanvas" width="1000" height="1000"></canvas>
+			<canvas id="MainCanvas"></canvas>
 			
-			<div style="display: inline-grid; grid-template-columns: repeat(4, 1fr); gap: 1px; padding-top: 2px">
+			<div style="display: inline-grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: -9px;">
 				<button id="SaveImage">Save Image</button>
-				<button id="SaveImage">A</button>
-				<button id="SaveImage">B</button>
-				<button id="SaveImage">C</button>
+				<button id="ResetCamera">Reset Camera</button>
+				<button id="ResetState">Reset State</button>
+				<button id="StartStop">Start</button>
 			</div>
 
 			<div style="display: inline-grid; grid-template-columns: repeat(2, 1fr); padding-top: 2px">
-				<span>FPS: 0</span>
-				<span>IPS: 0</span>
-				<span>Entropy: 0.00</span>
-				<span>Iteration: 0</span>
+				<span id="Stats_FPS">FPS: 0</span>
+				<span id="Stats_IPS">IPS: 0</span>
+				<span id="Stats_X">X: 0</span>
+				<span id="Stats_Y">Y: 0</span>
+				<span id="Stats_Entropy">Entropy: 0.00</span>
+				<span id="Stats_Iteration">Iteration: 0</span>
 			</div>
 		</div>
 
 		<div id="ManagerContainer">
 			<!-- Ants -->
-			<div>
+			<div class="SidePanel">
+				<!-- Simulation settings -->
+				<div class="InnerPanel">
+					<label class="OptionName">Grid Size</label>
+					<span style="display: flex; height: min-content; justify-content: center;">
+						<input id="GridSizeX" type="number" min="4" step="2" max="50000" value="100" style="width: 25%;">
+						<input id="GridSizeY" type="number" min="4" step="2" max="50000" value="100" style="width: 25%;">
+					</span>
+				</div>
+				
+				<div class="InnerPanel">
+					
+				</div>
 
+				<div class="InnerPanel" style="width: 100%">
+					Panel 3
+				</div>
 			</div>
 
 			<!-- Rules -->
-			<div>
+			<div class="SidePanel">
+				<div class="InnerPanel">
+					Panel 0
+				</div>
+				
+				<div class="InnerPanel">
+					Panel 1
+				</div>
 
+				<div class="InnerPanel" style="width: 100%">
+					Panel 3
+				</div>
 			</div>
 		</div>
 	</body>

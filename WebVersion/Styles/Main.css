@@ -1,6 +1,8 @@
 :root {
 	--Background: rgb(30, 30, 30);
+	--BackgroundActive: rgb(40, 40, 40);
 	--Foreground: rgb(60, 60, 60);
+	--ForegroundActive: rgb(75, 75, 75);
 	--Text: rgb(255, 255, 255);
 }
 
@@ -15,23 +17,35 @@ body {
 	overflow: hidden;
 }
 
+
 button {
 	border: 1px solid;
-	border-radius: 2px;
-
-	background: var(--Foreground);
+	background: var(--BackgroundActive);
 	color: var(--Text);
 }
 
-span {
+button:hover {
+	background: var(--Foreground);
+}
+
+button:active {
+	background: var(--ForegroundActive);
+}
+
+
+span, label, div {
 	color: var(--Text);
+}
+
+canvas {
+	border: var(--Text) 1px solid;
+	padding: 0px;
 }
 
 
 #MainCanvas {
-	width: 100%;
-	height: 0;
-	padding-bottom: 100%;
+	width: calc(100% - 2px);
+	height: auto;
 }
 
 #CanvasContainer {
@@ -50,4 +64,25 @@ span {
 	border: var(--Text) 1px solid;
 	padding: 1px; position: relative;
 	left: -1px;
+}
+
+.SidePanel {
+	border: var(--Text) 1px solid;
+	margin: -2px;
+	margin-bottom: 1px;
+	height: 50vh;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+}
+
+.InnerPanel {
+	border: var(--Text) 1px solid;
+	margin: -1px;
+	width: calc(100% - 1px);
+}
+
+.OptionName {
+	display: inline-block;
+	width: 100%;
+	text-align: center;
 }

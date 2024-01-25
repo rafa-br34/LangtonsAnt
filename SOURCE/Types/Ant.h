@@ -42,8 +42,8 @@ const char* DirectionStrings[] = {
 // 7 0 1
 // 6 o 2
 // 5 4 3
-constexpr int8_t c_DirectionsX[] = {  0,  1, 1, 1, 0, -1, -1, -1 };
-constexpr int8_t c_DirectionsY[] = { -1, -1, 0, 1, 1,  1,  0, -1 };
+constexpr int8_t c_DirectionsX[] = {  0,  1,  1,  1,  0, -1, -1, -1 };
+constexpr int8_t c_DirectionsY[] = { -1, -1,  0,  1,  1,  1,  0, -1 };
 constexpr int8_t c_VectorLookup[] = { 7, 0, 1, 6, 0, 2, 5, 4, 3 };
 
 template<typename CellType=uint8_t, typename SizeType=int>
@@ -58,8 +58,8 @@ public:
 
 
 	FORCE_INLINE void Rotate(int8_t Rotation) {
-		// Decode vector into direction by flattening it and using a lookup table,
-		// add the new rotation + 8 (rotation can be negative), and then mod 8
+		// Decode direction vector into direction index by flattening it and indexing a lookup table,
+		// add the new rotation + 8(rotation can be negative), and then mod 8
 		int8_t CurrentDirection = (c_VectorLookup[(3 * this->Direction.Y + this->Direction.X) + 4] + Rotation + 8) % 8;
 		
 		this->Direction.X = c_DirectionsX[CurrentDirection];
