@@ -77,7 +77,7 @@ int main(int ArgCount, const char* Args[]) {
 	size_t StateMachineSize = sizeof(StateMachine) / sizeof(DirectionEnum);
 
 
-	Vector2<int> CanvasSize = { 30720, 17280 };
+	Vector2<int> CanvasSize = {1080, 1080};//{ 30720, 17280 };
 
 	uint8_t* CanvasPointer = new uint8_t[CanvasSize.X * CanvasSize.Y]{ 0 };
 
@@ -105,9 +105,9 @@ int main(int ArgCount, const char* Args[]) {
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 -s 1920x1920 -sws_flags neighbor output.mp4
 	// ffmpeg -r 30 -i "Frames/%d.png" -c:v libx264 -preset veryslow -qp 0 -s 7680x4320 output.mp4
 
-	double Iterations = 1292334158; // Iterations 50000000000 (50b) 5000000000 (5b) 500000000 (500m) 50000000 (50m)
-	double Time = 240.0; // Video time
-	double Rate = 30.0; // Video frame rate
+	double Iterations = 21000; // Iterations 50000000000 (50b) 5000000000 (5b) 500000000 (500m) 50000000 (50m)
+	double Time = 50.0; // Video time
+	double Rate = 1.0; // Video frame rate
 	
 	auto CurrentSize = Vector2(CanvasSize.X, CanvasSize.Y);//Vector2(CanvasSize.X, CanvasSize.Y);
 	std::atomic<size_t> Running = 0;
@@ -164,6 +164,7 @@ int main(int ArgCount, const char* Args[]) {
 				Running
 			);
 			//*/
+			///*
 			ImageEncoder::SaveCanvasAsync(
 				CanvasPointer,
 				CanvasSize,
@@ -171,6 +172,7 @@ int main(int ArgCount, const char* Args[]) {
 				"Frames/" + std::to_string(i / CaptureDelta) + ".png",
 				Running
 			);
+			//*/
 		}
 		//*/
 
