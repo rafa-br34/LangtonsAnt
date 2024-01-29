@@ -363,7 +363,8 @@ async function Main() {
 
 			while (RuleString.length) {
 				let Result = null
-				if (typeof(Result = c_DirectionEnum[RuleString.substring(0, 3)]) == "number") { RuleString = RuleString.substring(3) }
+				if (typeof(Result = c_DirectionEnum[RuleString.substring(0, 4)]) == "number") { RuleString = RuleString.substring(4) }
+				else if (typeof(Result = c_DirectionEnum[RuleString.substring(0, 3)]) == "number") { RuleString = RuleString.substring(3) }
 				else if (typeof(Result = c_DirectionEnum[RuleString.substring(0, 1)]) == "number") { RuleString = RuleString.slice(1) }
 				
 				if (Result != null) {
