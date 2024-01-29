@@ -10,7 +10,15 @@ in vec4 a_VertexPosition;
 out vec4 u_VertexPosition;
 
 void main() {
-	gl_Position = (a_VertexPosition + vec4(u_Position.x, u_Position.y, 0.0, u_Position.z)) * vec4(u_GridSize.x / u_GridSize.y, u_GridSize.y / u_GridSize.x, 1.0, 1.0);
+	vec4 Position = (a_VertexPosition + vec4(u_Position.x, u_Position.y, 0.0, u_Position.z));
 
-	u_VertexPosition = a_VertexPosition + 0.5;
+	float RX = u_GridSize.x / u_GridSize.y;
+	float RY = u_GridSize.y / u_GridSize.x;
+	
+	if (RX > RY)
+		gl_Position = Position * vec4(RX, 1.0, 1.0, 1.0);
+	else
+		gl_Position = Position * vec4(1.0, RY, 1.0, 1.0);
+
+	u_VertexPosition = (a_VertexPosition + 1.0) / 2.0;
 }

@@ -45,23 +45,27 @@
 		<script src="Scripts/Ant.js"></script>
 	</head>
 	<body>
+		<!-- @todo UI improvements -->
 		<div id="CanvasContainer">
 			<canvas id="MainCanvas"></canvas>
 			
-			<div style="display: inline-grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: -9px;">
+			<div style="display: inline-grid; grid-template-columns: repeat(4, 1fr); gap: 1px;">
 				<button id="SaveImage">Save Image</button>
 				<button id="ResetCamera">Reset Camera</button>
 				<button id="ResetState">Reset State</button>
 				<button id="StartStop">Start</button>
 			</div>
 
-			<div style="display: inline-grid; grid-template-columns: repeat(2, 1fr); padding-top: 2px">
+			<div style="display: inline-grid; grid-template-columns: repeat(4, 1fr); padding-top: 2px">
 				<span id="Stats_FPS">FPS: 0</span>
 				<span id="Stats_IPS">IPS: 0</span>
 				<span id="Stats_X">X: 0</span>
 				<span id="Stats_Y">Y: 0</span>
-				<span id="Stats_Entropy">Entropy: 0.00</span>
+
+				<span id="Stats_Ants">Ants: 0</span>
 				<span id="Stats_Iteration">Iteration: 0</span>
+				<span id="Stats_Bandwidth">Bandwidth: 0B</span>
+				<span id="Stats_Buffer">Buffer: 0B</span>
 			</div>
 		</div>
 
@@ -72,32 +76,47 @@
 				<div class="InnerPanel">
 					<label class="OptionName">Grid Size</label>
 					<span style="display: flex; height: min-content; justify-content: center;">
-						<input id="GridSizeX" type="number" min="4" step="2" max="50000" value="100" style="width: 25%;">
-						<input id="GridSizeY" type="number" min="4" step="2" max="50000" value="100" style="width: 25%;">
+						<input id="GridSizeX" type="number" min="3" step="1" max="50000" value="1000" style="width: 25%;">
+						<input id="GridSizeY" type="number" min="3" step="1" max="50000" value="1000" style="width: 25%;">
+					</span>
+
+					<span>
+						<div>
+							<label class="OptionName" style="text-align: right; width: 20%">IPF: </label>
+							<input id="Iterations" type="number" min="0" step="1" max="100000000" value="10" style="width: 25%;">
+						</div>
+						
+						<div>
+							<label class="OptionName" style="text-align: right; width: 20%">Wrap: </label>
+							<input id="Wrap" type="checkbox" value="false">
+						</div>
 					</span>
 				</div>
 				
 				<div class="InnerPanel">
-					
+					<label class="OptionName">Ant Initial Position</label>
+					<span style="display: flex; height: min-content; justify-content: center;">
+						<input id="AntPositionX" type="number" min="0" step="1" max="50000" value="500" style="width: 25%;">
+						<input id="AntPositionY" type="number" min="0" step="1" max="50000" value="500" style="width: 25%;">
+					</span>
+
+					<label class="OptionName">Ant Initial Direction</label>
+					<span style="display: flex; height: min-content; justify-content: center;">
+						<input id="AntDirectionX" type="number" min="-1" step="1" max="1" value="0" style="width: 10%;">
+						<input id="AntDirectionY" type="number" min="-1" step="1" max="1" value="1" style="width: 10%;">
+					</span>
+
+					<label class="OptionName">Ant Rules</label>
+					<input id="AntRules" type="text" value="RL" style="margin-left: auto; margin-right: auto; display: block; background-color: rgba(0, 255, 0, 0.5);">
 				</div>
 
 				<div class="InnerPanel" style="width: 100%">
-					Panel 3
-				</div>
-			</div>
+					<span id="AntList" class="ListContainer" style="width: 100%; margin: -1px; border: 1px solid"></span>
 
-			<!-- Rules -->
-			<div class="SidePanel">
-				<div class="InnerPanel">
-					Panel 0
-				</div>
-				
-				<div class="InnerPanel">
-					Panel 1
-				</div>
-
-				<div class="InnerPanel" style="width: 100%">
-					Panel 3
+					<div style="height: 20px; display: grid; grid-template-columns: repeat(2, 50%);">
+						<button id="AddAnt">+</button>
+						<button id="RemoveAnt">-</button>
+					</div>
 				</div>
 			</div>
 		</div>

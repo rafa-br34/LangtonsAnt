@@ -1,3 +1,5 @@
+// Quite literally a JS rewrite of /SOURCE/Types/Ant.h
+
 const c_DirectionEnum = Object.freeze({
 	R45:   1, // Right 45°
 	R90:   2, // Right 90°
@@ -16,13 +18,13 @@ const c_DirectionEnum = Object.freeze({
 
 const c_DirectionStrings = Object.freeze([
 	"L135",
-	"L90",
+	"L",
 	"L45",
 
 	"C",
 
 	"R45",
-	"R90",
+	"R",
 	"R135",
 
 	"U"

@@ -17,7 +17,6 @@ body {
 	overflow: hidden;
 }
 
-
 button {
 	border: 1px solid;
 	background: var(--BackgroundActive);
@@ -30,6 +29,11 @@ button:hover {
 
 button:active {
 	background: var(--ForegroundActive);
+}
+
+button:disabled {
+	background: var(--Background);
+	color: var(--Foreground)
 }
 
 
@@ -70,7 +74,7 @@ canvas {
 	border: var(--Text) 1px solid;
 	margin: -2px;
 	margin-bottom: 1px;
-	height: 50vh;
+	height: calc(100% + 2px);
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
 }
@@ -85,4 +89,21 @@ canvas {
 	display: inline-block;
 	width: 100%;
 	text-align: center;
+}
+
+.ListContainer {
+	height: 100%;
+	max-height: calc(100vh - 21px);
+	display: inherit;
+	text-align: center;
+	overflow-y: scroll;
+}
+
+.ListItem {
+	user-select: none;
+	background: rgba(0,0,0,0.4);
+}
+
+.ListItem:hover {
+	background: rgba(0,0,0,0.2);
 }

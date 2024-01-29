@@ -73,6 +73,7 @@ class GLProgram {
 	AddAttributes(Names) { return this._AddVariables(Names, "getAttribLocation") }
 	AddUniforms(Names) { return this._AddVariables(Names, "getUniformLocation") }
 
+
 	constructor(Parent, VertexShaderOrProgram, FragmentShader) {
 		this.Parent = Parent
 
