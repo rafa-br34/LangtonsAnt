@@ -8,7 +8,7 @@
 #include <chrono>
 #include <map>
 
-#include "CommandLineInterface.h"
+//#include "CommandLineInterface.h"
 #include "ImageEncoder.h"
 #include "Common.h"
 
@@ -63,7 +63,7 @@ int main(int ArgCount, const char* Args[]) {
 	DirectionEnum StateMachine[] = {
 		//R,R,L,L,L,R,L,L,L,R,R,R // Creates a filled triangle shape
 		//L,L,R,R,R,L,R,L,R,L,L,R // Creates a convoluted highway
-		L,R,R,R,R,R,L,L,R // Fills space in a square around itself
+		//L,R,R,R,R,R,L,L,R // Fills space in a square around itself
 		//L,L,R,R // Grows symmetrically
 		//R,L,R // Grows chaotically
 		
@@ -71,13 +71,20 @@ int main(int ArgCount, const char* Args[]) {
 		//R,U,R,L,R,U
 		//R,L,L,L,R,L,R,R,L,L,R,R,R // Similar to LRRRRRLLR but halts growth by iteration 8477782376
 
+		//R,L,U,L,R,L,R,R,L,L,R,R,R
+		
+		//L45,R45
+		//L45,U,R45,U
+		L45,R45,L45,U,R45,U,L45,U,R45,U
+		
 		//R,L // Default Langton's ant
+
 	};
 
 	size_t StateMachineSize = sizeof(StateMachine) / sizeof(DirectionEnum);
 
 
-	Vector2<int> CanvasSize = {1080, 1080};//{ 30720, 17280 };
+	Vector2<int> CanvasSize = {1000, 1000};//{ 30720, 17280 };
 
 	uint8_t* CanvasPointer = new uint8_t[CanvasSize.X * CanvasSize.Y]{ 0 };
 
@@ -105,11 +112,12 @@ int main(int ArgCount, const char* Args[]) {
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 -s 1920x1920 -sws_flags neighbor output.mp4
 	// ffmpeg -r 30 -i "Frames/%d.png" -c:v libx264 -preset veryslow -qp 0 -s 7680x4320 output.mp4
 
-	double Iterations = 21000; // Iterations 50000000000 (50b) 5000000000 (5b) 500000000 (500m) 50000000 (50m)
-	double Time = 50.0; // Video time
-	double Rate = 1.0; // Video frame rate
+	double Iterations = 20042420543; // Iterations 50000000000 (50b) 5000000000 (5b) 500000000 (500m) 50000000 (50m)
+	double Time = 240.0; // Video time
+	double Rate = 30.0; // Video frame rate
 	
-	auto CurrentSize = Vector2(CanvasSize.X, CanvasSize.Y);//Vector2(CanvasSize.X, CanvasSize.Y);
+	auto CurrentSize = Vector2(3, 3);//Vector2(CanvasSize.X, CanvasSize.Y);
+	uint32_t F = 0;
 	std::atomic<size_t> Running = 0;
 	size_t CaptureDelta = size_t(Iterations / (Time * Rate));
 	for (size_t i = 0; i < size_t(Iterations); i++) {
@@ -123,13 +131,25 @@ int main(int ArgCount, const char* Args[]) {
 		if (!AntObject.Update(CanvasPointer, CanvasSize)) { std::cout << "Ant out of bounds at i:" << i << '\n'; break; }
 		//std::cout << "i:" << i << " x:" << AntObject.Position.X << " y:" << AntObject.Position.Y << '\n';
 		
-		/*
+		///*
 		bool B0 = AntObject.Position.X > (CanvasSize.X / 2) + (CurrentSize.X / 2) || AntObject.Position.Y > (CanvasSize.Y / 2) + (CurrentSize.Y / 2);
 		bool B1 = AntObject.Position.X < (CanvasSize.X / 2) - (CurrentSize.X / 2) || AntObject.Position.Y < (CanvasSize.Y / 2) - (CurrentSize.Y / 2);
 		if (B0 + B1) {
-			//std::cout << "x:" << (int)CurrentSize.X << " y:" << (int)CurrentSize.Y << " i:" << i << '\n';
+			std::cout << "x:" << (int)CurrentSize.X << " y:" << (int)CurrentSize.Y << " i:" << i << '\n';
 			CurrentSize.X += 1;//CanvasSize.X / 100;
 			CurrentSize.Y += 1;//CanvasSize.Y / 100;
+			
+			/*
+			ImageEncoder::SaveCanvasAsync(
+				CanvasPointer,
+				CanvasSize,
+				Vector2((CanvasSize.X / 2) - (CurrentSize.X / 2), (CanvasSize.Y / 2) - (CurrentSize.Y / 2)),
+				CurrentSize,
+				EncoderState,
+				"Frames/" + std::to_string(i / CaptureDelta) + ".png",
+				Running
+			);
+			//*/
 		}
 		//*/
 
@@ -148,11 +168,11 @@ int main(int ArgCount, const char* Args[]) {
 		}
 		//*/
 
-		///*
+		//*
 		if (i % CaptureDelta == 0) {
-			std::cout << "Capturing frame i:" << i << " f:" << i / CaptureDelta << '\n';
+			//std::cout << "Capturing frame i:" << i << " f:" << i / CaptureDelta << '\n';
 
-			while (Running > 6) {}
+			while (Running > 50) {}
 			/*
 			ImageEncoder::SaveCanvasAsync(
 				CanvasPointer,
@@ -164,7 +184,7 @@ int main(int ArgCount, const char* Args[]) {
 				Running
 			);
 			//*/
-			///*
+			/*
 			ImageEncoder::SaveCanvasAsync(
 				CanvasPointer,
 				CanvasSize,

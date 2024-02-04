@@ -1,6 +1,3 @@
-function ResizeGrid(NewSize) {
-	return new Uint16Array(NewSize.X * NewSize.Y).fill(0)
-}
 
 function SetEnabled(Item, Value) {
 	if (!Value)
@@ -39,7 +36,7 @@ function ByteCountToMeasurement(Count) {
 		"UNK"
 	]
 
-	Iteration = 0
+	let Iteration = 0
 	while (Count >= 1024) {
 		Count /= 1024
 		Iteration++
@@ -113,6 +110,9 @@ async function SetupRenderer(Canvas) {
 
 class Simulation {
 	Wrap = false
+
+	GridSize = { X: 0, Y: 0 }
+	Grid = null
 	
 	TotalIterations = 0
 	TemplateAnts = []
@@ -125,17 +125,37 @@ class Simulation {
 		}
 		
 		this.TotalIterations = 0
+		this.Grid.fill(0)
 	}
 
-	Update(Grid, GridSize, Iterations=1, Wrap=this.Wrap) {
+	Update(Iterations=1, Wrap=this.Wrap) {
+		let GridSize = this.GridSize
+		let Grid = this.Grid
 		let Ants = this.Ants
-
-		for (let i = 0; i < Iterations; i++) {
-			for (let AntObject of Ants) AntObject.UpdatePosition(Grid, GridSize, Wrap)
-			for (let i = 0; i < Ants.length; i++) if (!Ants[i].UpdateCell(Grid, GridSize)) Ants.splice(i, 1)
+		
+		if (Ants.length == 1) { // Use single step update (faster)
+			let AntObject = Ants[0]
+			for (let i = 0; i < Iterations; i++) {
+				if (!AntObject.Update(Grid, GridSize, Wrap)) Ants.splice(0, 1)
+			}
 		}
-
+		else { // Use double step update (slower)
+			for (let i = 0; i < Iterations; i++) {
+				for (let AntObject of Ants) AntObject.UpdatePosition(Grid, GridSize, Wrap)
+				for (let i = 0; i < Ants.length; i++) if (!Ants[i].UpdateCell(Grid, GridSize)) Ants.splice(i, 1)
+			}
+		}
+		
 		this.TotalIterations += Iterations
+	}
+
+	ResizeGrid(X, Y) {
+		let GridSize = this.GridSize
+		
+		GridSize.X = X
+		GridSize.Y = Y
+
+		return this.Grid = new Uint16Array(GridSize.X * GridSize.Y).fill(0)
 	}
 }
 
@@ -184,9 +204,14 @@ async function Main() {
 	
 	let {GL, Renderer, Program} = await SetupRenderer(MainCanvas)
 	
+	let SimulationObject = new Simulation()
+
+	let IterationsPerFrame = 1
 	let CameraPosition = { X: 0, Y: 0, Z: 0 }
-	let GridSize = { X: 0, Y: 0 }
-	let Grid
+	let GridSize = SimulationObject.GridSize
+	let Grid = null
+
+	let ReloadBuffer = false
 
 	// Setup Listeners
 	{
@@ -247,38 +272,35 @@ async function Main() {
 		})
 	}
 
-	let IterationsPerFrame = 1
-	let Wrap = false
 	// Setup configs
 	{
-		function UpdateGridSize() {
-			GridSize.X = Config.GridSizeX.value
-			GridSize.Y = Config.GridSizeY.value
+		let {GridSizeX, GridSizeY, Iterations, Wrap} = Config
 
-			DBG(`Resizing grid to ${GridSize.X}x${GridSize.Y} ${GridSize.X * GridSize.Y} items`)
-			Grid = ResizeGrid(GridSize)
+		function UpdateGridSize() {
+			Grid = SimulationObject.ResizeGrid(GridSizeX.value, GridSizeY.value)
 
 			let [Count, Type] = ByteCountToMeasurement(Grid.byteLength)
 			Stats.Buffer.innerHTML = `Buffer: ${Math.round(Count * 100) / 100}${Type}`
+			
+			ReloadBuffer = true
 		}
-		Config.GridSizeX.addEventListener("input", UpdateGridSize)
-		Config.GridSizeY.addEventListener("input", UpdateGridSize)
+		GridSizeX.addEventListener("input", UpdateGridSize)
+		GridSizeY.addEventListener("input", UpdateGridSize)
 		UpdateGridSize()
 
 		function UpdateIterations() {
-			DBG(`New IPF value is ${IterationsPerFrame = Number(Config.Iterations.value)}`)
+			IterationsPerFrame = Number(Iterations.value)
 		}
-		Config.Iterations.addEventListener("input", UpdateIterations)
+		Iterations.addEventListener("input", UpdateIterations)
 		UpdateIterations()
 
 		function UpdateWrap() {
-			DBG(`New Wrap value is ${Wrap = Config.Wrap.checked}`)
+			SimulationObject.Wrap = Wrap.checked
 		}
-		Config.Wrap.addEventListener("change", UpdateWrap)
+		Wrap.addEventListener("change", UpdateWrap)
 		UpdateWrap()
 	}
 
-	let SimulationObject = new Simulation()	
 	// Setup simulation interface
 	{
 		let {AntList, AddAnt, RemoveAnt, AntPositionX, AntPositionY, AntDirectionX, AntDirectionY, AntRules} = SimulationInterface
@@ -312,13 +334,13 @@ async function Main() {
 
 		AddAnt.addEventListener("click", () => {
 			let NewAnt = new Ant(GridSize.X / 2, GridSize.Y / 2, 0, -1, CreateStateMachine("RL".split('')))
-			let NewLabel = MakeElement("div", AntList, { class: "ListItem" }, `Ant ${performance.now()}`)
+			let NewLabel = MakeElement("div", AntList, { class: "ListItem" }, `Ant ${AntList.children.length + 1}`)
 
 			NewLabel.AntObject = NewAnt
 			SimulationObject.TemplateAnts.push(NewAnt)
 
 			SetEnabled(RemoveAnt, true)
-			Grid.fill(0); SimulationObject.Reset()
+			SimulationObject.Reset()
 		})
 		
 		RemoveAnt.addEventListener("click", () => {
@@ -334,7 +356,7 @@ async function Main() {
 
 			SelectedAnt.remove()
 			SelectedAnt = null
-			Grid.fill(0); SimulationObject.Reset()
+			SimulationObject.Reset()
 		})
 
 		function UpdateAnt() {
@@ -347,7 +369,7 @@ async function Main() {
 			AntObject.Direction.X = Number(AntDirectionX.value)
 			AntObject.Direction.Y = Number(AntDirectionY.value)
 
-			Grid.fill(0); SimulationObject.Reset()
+			SimulationObject.Reset()
 		}
 		AntPositionX.addEventListener("change", UpdateAnt)
 		AntPositionY.addEventListener("change", UpdateAnt)
@@ -378,7 +400,7 @@ async function Main() {
 			AntRules.style.backgroundColor = "rgba(0,255,0,0.5)"
 			AntObject.StateMachine = RuleSet
 			
-			Grid.fill(0); SimulationObject.Reset()
+			SimulationObject.Reset()
 			UpdateOptions()
 		})
 
@@ -408,10 +430,10 @@ async function Main() {
 	
 		Interface.ResetCamera.addEventListener("click", () => { CameraPosition = { X: 0, Y: 0, Z: 0 } })
 	
-		Interface.ResetState.addEventListener("click", () => { Grid.fill(0); SimulationObject.Reset() })
+		Interface.ResetState.addEventListener("click", () => { SimulationObject.Reset() })
 	}
 
-	//SimulationObject.TemplateAnts.push(new Ant(500, 800, 0, -1, CreateStateMachine("RL".split(''))))
+	//SimulationObject.TemplateAnts.push(new Ant(GridSize.X / 2, GridSize.Y / 2, 0, -1, CreateStateMachine("RL".split(''))))
 
 	let Deltas = []
 	let DeltaIndex = 0
@@ -443,7 +465,6 @@ async function Main() {
 	}
 	
 
-	let LastSize = GridSize.X * GridSize.Y
 	function UpdateRender() {
 		GL.clearColor(0, 0, 0, 0)
 		GL.clear(GL.COLOR_BUFFER_BIT)
@@ -452,7 +473,7 @@ async function Main() {
 		GL.uniform2fv(Program.Variables["u_GridSize"], [GridSize.X, GridSize.Y])
 
 		// There's no point in uploading a new buffer if the simulation is not evolving and the buffer size didn't change
-		if (Run || LastSize != GridSize.X * GridSize.Y) {
+		if (Run || ReloadBuffer) {
 			GL.texImage2D(
 				GL.TEXTURE_2D,
 				0,
@@ -464,7 +485,7 @@ async function Main() {
 				GL.UNSIGNED_SHORT,
 				Grid,
 			)
-			LastSize = GridSize.X * GridSize.Y
+			ReloadBuffer = false
 		}
 
 		GL.drawArrays(GL.TRIANGLES, 0, 6)
@@ -475,7 +496,7 @@ async function Main() {
 		let Delta = FrameTime - Last
 		
 		UpdateCounters(Delta)
-		if (Run) SimulationObject.Update(Grid, GridSize, IterationsPerFrame, Wrap)
+		if (Run) SimulationObject.Update(IterationsPerFrame)
 		UpdateRender()
 
 		Last = FrameTime
