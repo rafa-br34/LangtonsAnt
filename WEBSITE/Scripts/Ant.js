@@ -39,13 +39,59 @@ function CreateStateMachine(Positions) {
 	return NewMachine
 }
 
+
 function StateMachineToString(StateMachine, Separator="") {
 	let NewString = ""
 
-	for (Direction of StateMachine)
+	for (let Direction of StateMachine)
 		NewString += c_DirectionStrings[(Direction + 3) % c_DirectionStrings.length] + Separator
 
 	return NewString
+}
+
+function ParseStateMachine(MachineString) {
+	let Result = []
+
+	let Skip = 0
+	let ParseDirection = 0
+
+	for (let Character of MachineString) {
+		if (ParseDirection != 0) { // Parse direction
+			const c_SkipSize = [ 1, 1, 2 ] // How many characters to skip
+			const c_Angles = [ '4', '9', '1' ] // 45, 90, 135
+
+			for (let i = 0; i < c_Angles.length; i++) {
+				if (Character == c_Angles[i]) {
+					Result.push((i + 1) * ParseDirection)
+					Skip += c_SkipSize[i]
+					break
+				}
+			}
+
+			// If skip is 0 then we didn't find anything, so presume R90/L90
+			if (Skip == 0) Result.push(2 * ParseDirection)
+
+			ParseDirection = 0 // Stop parsing direction
+		}
+		if (Skip > 0) { Skip--; continue }
+
+		// Parse command
+		switch (Character) {
+			case 'R':
+				ParseDirection =  1; break // Prepare to parse right direction
+			case 'L':
+				ParseDirection = -1; break // Prepare to parse left direction
+			case 'U':
+				Result.push(c_DirectionEnum.U); break
+			case 'C':
+				Result.push(c_DirectionEnum.C); break
+		}
+	}
+
+	if (ParseDirection != 0)
+		Result.push(2 * ParseDirection)
+
+	return [Result, true]
 }
 
 // Directions: (360 / 8)
@@ -61,10 +107,13 @@ class Ant {
 	Direction = { X: 0, Y: 0 }
 	Position = { X: 0, Y: 0 }
 
+	Wrap = false
+	StepSize = 1
+
 	StateMachine = []
 
 	Rotate(Rotation) {
-		// Decode direction vector into direction index by flattening it and indexing a lookup table,
+		// Decode direction vector into direction index by flattening it (adding 4 as getting -4 is possible) and indexing a lookup table,
 		// add the new rotation + 8(rotation can be negative), and then mod 8
 		let CurrentDirection = (c_VectorLookup[(3 * this.Direction.Y + this.Direction.X) + 4] + Rotation + 8) % 8
 		
@@ -79,7 +128,12 @@ class Ant {
 		if (this.Position.Y >= GridSize.Y) this.Position.Y = 0
 	}
 
-	Update(Grid, GridSize, Wrap=false) {
+	ValidatePosition(GridSize) {
+		let Pos = this.Position
+		return Pos.X < GridSize.X && Pos.Y < GridSize.Y && Pos.X >= 0 && Pos.Y >= 0
+	}
+
+	Update(Grid, GridSize) {
 		let Dir = this.Direction
 		let Pos = this.Position
 
@@ -90,17 +144,17 @@ class Ant {
 		let CellValue = Grid[CellIndex]
 		
 		this.Rotate(this.StateMachine[CellValue % this.StateMachine.length])
-		Pos.X += Dir.X
-		Pos.Y += Dir.Y
+		Pos.X += Dir.X * this.StepSize
+		Pos.Y += Dir.Y * this.StepSize
 
 		Grid[CellIndex] = (CellValue + 1) % this.StateMachine.length
 		
-		if (Wrap) this.WrapPosition(GridSize)
+		if (this.Wrap) this.WrapPosition(GridSize)
 		return 1
 	}
 
 	// Double step update (used for multiple ants)
-	UpdatePosition(Grid, GridSize, Wrap=false) {
+	UpdatePosition(Grid, GridSize) {
 		let Last = this.LastPosition
 		let Pos = this.Position
 		let Dir = this.Direction
@@ -109,10 +163,10 @@ class Ant {
 		Last.Y = Pos.Y
 
 		this.Rotate(this.StateMachine[Grid[GridSize.X * Pos.Y + Pos.X] % this.StateMachine.length])
-		Pos.X += Dir.X
-		Pos.Y += Dir.Y
+		Pos.X += Dir.X * this.StepSize
+		Pos.Y += Dir.Y * this.StepSize
 	
-		if (Wrap) this.WrapPosition(GridSize)
+		if (this.Wrap) this.WrapPosition(GridSize)
 	}
 	
 	UpdateCell(Grid, GridSize) {
@@ -131,11 +185,13 @@ class Ant {
 		return 1
 	}
 
-	constructor(X, Y, DX, DY, StateMachine) {
+	constructor(X, Y, DX, DY, StateMachine, Wrap = false, StepSize = 1) {
 		this.Position.X = X
 		this.Position.Y = Y
 		this.Direction.X = DX
 		this.Direction.Y = DY
 		this.StateMachine = StateMachine
+		this.Wrap = Wrap
+		this.StepSize = StepSize
 	}
 }

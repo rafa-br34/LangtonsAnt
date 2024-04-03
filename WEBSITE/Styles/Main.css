@@ -1,0 +1,196 @@
+:root {
+	--Background: rgb(30, 30, 30);
+	--BackgroundActive: rgb(40, 40, 40);
+	--Foreground: rgb(60, 60, 60);
+	--ForegroundActive: rgb(75, 75, 75);
+	--Text: rgb(255, 255, 255);
+}
+
+* {
+	font-family: 'Consolas', Courier, monospace;
+}
+
+body {
+	background-color: var(--Background);
+	display: inline-flex;
+	overflow-x: hidden;
+	margin: 0px;
+}
+
+button {
+	border: 1px solid;
+	background: var(--BackgroundActive);
+	color: var(--Text);
+
+	&:hover {
+		background: var(--Foreground);
+	}
+
+	&:active {
+		background: var(--ForegroundActive);
+	}
+
+	&:disabled {
+		background: var(--Background);
+		color: var(--Foreground)
+	}
+}
+
+input[type="checkbox"] {
+	margin: 0px;
+	appearance: none;
+	display: flex;
+	align-content: center;
+	justify-content: center;
+	border: solid var(--ForegroundActive) 1px;
+
+	&::before {
+		content: "";
+		width: 1rem;
+		height: 1rem;
+		transform: scale(0);
+		background-color: var(--Text);
+	}
+
+	&:disabled::before {
+		background-color: var(--BackgroundActive);
+	}
+
+	&:checked::before {
+		transform: scale(75%);
+	}
+}
+
+
+input[type="number"] {
+	border: solid var(--ForegroundActive) 1px;
+	background: var(--Foreground);
+	color: var(--Text);
+	appearance: textfield;
+
+	&:disabled {
+		color: var(--BackgroundActive);
+	}
+}
+
+input[type="text"] {
+	border: solid var(--ForegroundActive) 1px;
+	background: var(--Foreground);
+	color: var(--Text);
+	padding: 0px;
+	margin: 0px;
+	box-sizing: border-box;
+	max-width: 100%;
+
+
+	&:disabled {
+		color: var(--BackgroundActive);
+	}
+}
+
+span, label, div {
+	color: var(--Text);
+}
+
+canvas {
+	border: var(--Text) 1px solid;
+	padding: 0px;
+}
+
+
+#MainCanvas {
+	width: calc(100% - 2px);
+	height: auto;
+}
+
+#CanvasContainer {
+	display: grid;
+	width: calc(100vh - 100px);
+	max-width: calc(100vh - 100px);
+	height: calc(100vh - 4px);
+	border: var(--Text) 1px solid;
+	padding: 1px;
+}
+
+#ManagerContainer {
+	display: grid;
+	width: calc(calc(100vw - calc(100vh - 100px)) - 7px);
+	height: calc(100vh - 4px);
+	border: var(--Text) 1px solid;
+	padding: 1px; position: relative;
+	left: -1px;
+}
+
+.SidePanel {
+	border: var(--Text) 1px solid;
+	margin: -2px;
+	margin-bottom: 1px;
+	height: calc(100% + 2px);
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+}
+
+/* Settings panel */
+.SettingsPanel {
+	border: var(--Text) 1px solid;
+	margin: -1px;
+	width: calc(100% - 1px);
+}
+
+.SettingsPanel .Title {
+	display: inline-block;
+	width: 100%;
+	text-align: center;
+	background: rgba(0.1, 0.1, 0.1, 0.4);
+	border-bottom: outset 1px;
+	margin-bottom: 2px;
+	border-top: var(--Text) 1px solid;
+	margin-top: -1px;
+}
+
+.SettingsPanel .Title.Spaced {
+	margin-top: 4px;
+}
+
+.SettingsPanel .Entry {
+	display: flex;
+	margin-top: 1px;
+}
+
+.SettingsPanel .Entry .Name {
+	width: 30%;
+	position: absolute;
+	padding-left: 4px;
+}
+.SettingsPanel .Entry .Value {
+	display: inline-flex;
+	width: 100%;
+	margin-left: 30%;
+	margin-right: 30%;
+	max-width: 40%;
+	gap: 1px;
+	z-index: 1;
+}
+
+.OptionName {
+	display: inline-block;
+	width: 100%;
+	text-align: center;
+}
+
+.ListContainer {
+	height: 100%;
+	max-height: calc(100vh - 21px);
+	display: inherit;
+	text-align: center;
+	overflow-y: scroll;
+}
+
+.ListItem {
+	user-select: none;
+	background: rgba(0,0,0,0.4);
+
+	&:hover {
+		background: rgba(0,0,0,0.2);
+	}
+}

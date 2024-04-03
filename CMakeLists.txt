@@ -13,10 +13,17 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 set(CMAKE_GENERATOR_PLATFORM x64)
 set(CMAKE_CXX_STANDARD 20)
 
-message(STATUS "Generator = ${CMAKE_GENERATOR}")
 
-add_executable(${PROJECT_NAME} SOURCE/Entry.cpp LIBRARIES/lodepng/lodepng.cpp)
+include(CMake/lodepng.cmake)
+include(CMake/argparse.cmake)
+
+if(MSVC)
+	add_compile_options(/W4)
+else()
+	add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+add_executable(${PROJECT_NAME} SOURCE/Entry.cpp ${COMMON_SOURCES})

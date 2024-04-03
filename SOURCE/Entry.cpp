@@ -8,31 +8,20 @@
 #include <chrono>
 #include <map>
 
-//#include "CommandLineInterface.h"
-#include "ImageEncoder.h"
+#include <array>
+
+#include <argparse/argparse.hpp>
+
+#include "ConfigParser.h"
 #include "Common.h"
 
+#include "Types/SimulationState.h"
+#include "Types/EncoderState.h"
 #include "Types/Vector.h"
 #include "Types/Ant.h"
 
 
-
-
-std::string StateMachineToString(const DirectionEnum* StateMachine, size_t Size, const char* Separator="") {
-	std::string NewString;
-	
-	NewString.reserve(Size * 3);
-
-	for (size_t i = 0; i < Size; i++)
-		NewString += std::string(DirectionStrings[int8_t(StateMachine[i]) + 3]) + std::string((i + 1 != Size) ? Separator : "");
-
-	return NewString;
-}
-
-template<typename AntType>
-FORCE_INLINE void IterateAnts(std::vector<AntType>& AntList) {}
-
-
+/* @todo argument parser yay
 template<typename Type, typename SizeType=size_t>
 void BuildPossibilityList(std::vector<std::vector<Type>>& List, SizeType Size, Type* Dictionary, SizeType DictionarySize) {
 	Type* Current = new Type[Size];
@@ -58,9 +47,66 @@ void BuildPossibilityList(std::vector<std::vector<Type>>& List, SizeType Size, T
 	delete[] Current;
 }
 
-int main(int ArgCount, const char* Args[]) {
+
+void ParseArguments(int Count, const char* Values[], State<>& GlobalState) {
+	argparse::ArgumentParser Program("Langton's ant");
+
+	Program.add_description("Efficient modular implementation of Langton's ant universal Turing machine which supports R45/L45, R90/L90, R135/L135, U(U turn), and C(Continue)");
+
+	Program.add_argument("-x").default_value(1000).help("Canvas width");
+	Program.add_argument("-y").default_value(1000).help("Canvas height");
+
+	Program.add_argument("-m")
+		.default_value(std::vector<std::string>{"LRRRRRLLR"})
+		.append()
+		.help("Defines a state machine");
+	
+	Program.add_argument("-a")
+		.default_value(std::vector<std::string>{"P(500,500)D(0,-1)M(LR)"})
+		.append()
+		.help("Defines a ant, format: \"P(X,Y)D(DX,DY)M(M)S(S)F(W?)\" can be chained using ';'");
+
+	Program.add_argument("-i")
+		.default_value("1000")
+		.help("Defines when to take canvas snapshots");
+
+	Program.add_argument("-s")
+		.default_value("i5000")
+		.help("Defines how many iterations should be evaluated, i50b runs for 50b iterations, t50 runs for 50 seconds.");
+
+
+	try {
+		Program.parse_args(Count, Values);
+	}
+	catch (const std::exception& Error) {
+		std::cerr << Error.what() << std::endl;
+		std::cerr << Program;
+		std::exit(1);
+	}
+
+	GlobalState.CanvasSize.X = Program.get<int>("-x");
+	GlobalState.CanvasSize.Y = Program.get<int>("-y");
+	
+	std::vector<std::vector<DirectionEnum>> StateMachines = {};
+
+	ConfigParser::ParseStateMachines(Program.get<std::string>("-m"), StateMachines);
+	ConfigParser::ParseAnts(Program.get<std::string>("-a"), StateMachines, GlobalState.TemplateAnts);
+
+	GlobalState.Reset();
+}
+
+int main(int ArgCount, const char* ArgValues[]) {
+	State GlobalState;
+
+	ParseArguments(ArgCount, ArgValues, GlobalState);
+
+}
+*/
+
+
+int main(int ArgCount, const char* ArgValues[]) {
 	using enum DirectionEnum;
-	DirectionEnum StateMachine[] = {
+	std::vector<DirectionEnum> StateMachine = {
 		//R,R,L,L,L,R,L,L,L,R,R,R // Creates a filled triangle shape
 		//L,L,R,R,R,L,R,L,R,L,L,R // Creates a convoluted highway
 		//L,R,R,R,R,R,L,L,R // Fills space in a square around itself
@@ -75,27 +121,23 @@ int main(int ArgCount, const char* Args[]) {
 		
 		//L45,R45
 		//L45,U,R45,U
-		L45,R45,L45,U,R45,U,L45,U,R45,U
+		//L45,R45,L45,U,R45,U,L45,U,R45,U
 		
 		//R,L // Default Langton's ant
-
+		//U,C,L45,R45
+		//C,U,U,U,C,L45,R45,U,C,L45,R135
+		
 	};
 
-	size_t StateMachineSize = sizeof(StateMachine) / sizeof(DirectionEnum);
+	std::cout << "State machine: " << StateMachineToString(StateMachine, "") << '\n';
 
+	Vector2<int> CanvasSize(30720, 30720);//{ 30720, 17280 };
 
-	Vector2<int> CanvasSize = {1000, 1000};//{ 30720, 17280 };
-
-	uint8_t* CanvasPointer = new uint8_t[CanvasSize.X * CanvasSize.Y]{ 0 };
-
-
-	std::cout << "State machine: " << StateMachineToString(StateMachine, StateMachineSize, "") << '\n';
-
-	lodepng::State EncoderState;
-	ImageEncoder::SetupEncoderState<uint8_t>(&EncoderState, StateMachineSize);
+	SimulationState<uint8_t, int> Simulation;
+	EncoderState Encoder;
 	
-	auto Center = CanvasSize / Vector2(2, 2);
-
+	Simulation.Resize(CanvasSize);
+	
 	/*
 	std::vector<Ant<uint8_t>> Ants = {};
 	Ants.push_back(Ant<uint8_t>(Center + Vector2(0, 10), Vector2<int8_t>(0, -1), StateMachine, StateMachineSize));
@@ -104,111 +146,32 @@ int main(int ArgCount, const char* Args[]) {
 	Ants.push_back(Ant<uint8_t>(Center + Vector2(10, 0), Vector2<int8_t>(-1, 0), StateMachine, StateMachineSize));
 	Ants.push_back(Ant<uint8_t>(Center - Vector2(10, 0), Vector2<int8_t>( 1, 0), StateMachine, StateMachineSize));
 	//*/
+	auto Center = CanvasSize / Vector2(2, 2);
+	//Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {C,C,C,C,C,C,U,C,C,C,C,C,R45,R,R45,L135,U,C,U,L,L,R135,L45,R45,R,R135,L45,R,R,R45}, true));
 	
-	auto AntObject = Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), StateMachine, StateMachineSize);
+	Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L,C}, true));
+	Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L,R,R,L,R,R,L,R,R,L,R}, true));
 
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 output.mp4
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 -s 1920x1920 output.mp4
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 -s 1920x1920 -sws_flags neighbor output.mp4
 	// ffmpeg -r 30 -i "Frames/%d.png" -c:v libx264 -preset veryslow -qp 0 -s 7680x4320 output.mp4
+	// 1ull * 1000000000ull 1b
 
-	double Iterations = 20042420543; // Iterations 50000000000 (50b) 5000000000 (5b) 500000000 (500m) 50000000 (50m)
-	double Time = 240.0; // Video time
-	double Rate = 30.0; // Video frame rate
+	size_t Iterations = 6ull * 1000000000ull;
+	double FrameRate = 30.0; // Video frame rate
+	double Time = 120.0; // Video time
+	size_t Frames = size_t(Time * FrameRate);
 	
-	auto CurrentSize = Vector2(3, 3);//Vector2(CanvasSize.X, CanvasSize.Y);
-	uint32_t F = 0;
-	std::atomic<size_t> Running = 0;
-	size_t CaptureDelta = size_t(Iterations / (Time * Rate));
-	for (size_t i = 0; i < size_t(Iterations); i++) {
+	size_t CaptureDelta = size_t(double(Iterations) / double(Frames));
 
-		/*
-		bool Stop = false;
-		for (auto& AntObject : Ants) AntObject.UpdatePosition(CanvasPointer, CanvasSize, false);
-		for (auto& AntObject : Ants) if (!AntObject.UpdateCell(CanvasPointer, CanvasSize)) { Stop = true; break; }
-		//*/
-		
-		if (!AntObject.Update(CanvasPointer, CanvasSize)) { std::cout << "Ant out of bounds at i:" << i << '\n'; break; }
-		//std::cout << "i:" << i << " x:" << AntObject.Position.X << " y:" << AntObject.Position.Y << '\n';
-		
-		///*
-		bool B0 = AntObject.Position.X > (CanvasSize.X / 2) + (CurrentSize.X / 2) || AntObject.Position.Y > (CanvasSize.Y / 2) + (CurrentSize.Y / 2);
-		bool B1 = AntObject.Position.X < (CanvasSize.X / 2) - (CurrentSize.X / 2) || AntObject.Position.Y < (CanvasSize.Y / 2) - (CurrentSize.Y / 2);
-		if (B0 + B1) {
-			std::cout << "x:" << (int)CurrentSize.X << " y:" << (int)CurrentSize.Y << " i:" << i << '\n';
-			CurrentSize.X += 1;//CanvasSize.X / 100;
-			CurrentSize.Y += 1;//CanvasSize.Y / 100;
-			
-			/*
-			ImageEncoder::SaveCanvasAsync(
-				CanvasPointer,
-				CanvasSize,
-				Vector2((CanvasSize.X / 2) - (CurrentSize.X / 2), (CanvasSize.Y / 2) - (CurrentSize.Y / 2)),
-				CurrentSize,
-				EncoderState,
-				"Frames/" + std::to_string(i / CaptureDelta) + ".png",
-				Running
-			);
-			//*/
-		}
-		//*/
-
-		/*
-		if (i % 1000000 == 0) { // 1000000000 (1b) 100000000 (100m) 1000000 (1m)
-			std::cout << "Encoding canvas state i:" << i << "\n";
-			
-			while (Running >= 2) {}
-			ImageEncoder::SaveCanvasAsync(
-				CanvasPointer,
-				CanvasSize,
-				EncoderState,
-				"Frames/STATE_" + std::to_string(i/1000000) + ".png",
-				Running
-			);
-		}
-		//*/
-
-		//*
-		if (i % CaptureDelta == 0) {
-			//std::cout << "Capturing frame i:" << i << " f:" << i / CaptureDelta << '\n';
-
-			while (Running > 50) {}
-			/*
-			ImageEncoder::SaveCanvasAsync(
-				CanvasPointer,
-				CanvasSize,
-				Vector2((CanvasSize.X / 2) - (CurrentSize.X / 2), (CanvasSize.Y / 2) - (CurrentSize.Y / 2)),
-				CurrentSize,
-				EncoderState,
-				"Frames/" + std::to_string(i / CaptureDelta) + ".png",
-				Running
-			);
-			//*/
-			/*
-			ImageEncoder::SaveCanvasAsync(
-				CanvasPointer,
-				CanvasSize,
-				EncoderState,
-				"Frames/" + std::to_string(i / CaptureDelta) + ".png",
-				Running
-			);
-			//*/
-		}
-		//*/
-
-		//if (Stop) { std::cout << "Stopping at i:" << i << '\n'; break; }
+	Simulation.Reset();
+	Encoder.Threads = 70;
+	for (size_t i = 0; i < Frames; i++) {
+		std::cout << i << '\n';
+		Simulation.Simulate(CaptureDelta);
+		Encoder.EncodeAsync(Simulation, std::string("Frames/State_") + std::to_string(i) +".png");
 	}
-
-	std::cout << "Encoding final canvas state...\n";
-	ImageEncoder::SaveCanvas(
-		CanvasPointer,
-		CanvasSize,
-		EncoderState,
-		"Frames/FINAL.png"
-	);
-
-	std::cout << "Waiting for encoder threads to stop...\n";
-	while (Running > 0) {}
-
-	delete[] CanvasPointer;
+	
+	Encoder.WaitJobs();
 }

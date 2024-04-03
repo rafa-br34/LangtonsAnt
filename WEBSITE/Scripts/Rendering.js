@@ -2,10 +2,6 @@ function ExtendContext(Context, Extension) {
 	return (Context.getExtension(Extension) ? true : alert(`Extension ${Extension} not supported or unavailable`)) || false
 }
 
-function InitializeContext(Canvas, Options) {
-
-}
-
 function CreateShader(GL, Source, Type) {
 	let Shader = GL.createShader(Type)
 
@@ -18,7 +14,7 @@ function CreateShader(GL, Source, Type) {
 	return Shader
 }
 
-class GLProgram {
+class Program {
 	Variables = {}
 	Program = null
 	Parent = null
@@ -84,39 +80,42 @@ class GLProgram {
 	}
 }
 
-class GLRenderer {
+class Context {
 	GL = null
 
 	Programs = []
 
 
 	Initialize(Canvas, Options) {
-		this.GL = Canvas.getContext("webgl2", Options)
+		let GL = this.GL = Canvas.getContext("webgl2", Options)
 
-		if (this.GL == null) throw Error("WebGL unsupported or unavailable")
-	
+		if (GL == null) throw Error("WebGL unsupported or unavailable")
+		
 		return this
 	}
 
 
 	AddProgram(VertexShader, FragmentShader) {
-		let NewProgram = new GLProgram(this, VertexShader, FragmentShader)
+		let NewProgram = new Program(this, VertexShader, FragmentShader)
 	
 		this.Programs.push(NewProgram)
 		return NewProgram
 	}
 
-	UseProgram(Program) {
-		if (Program.constructor == GLProgram)
-			Program.Use(this)
-		else if (Program.constructor == WebGLProgram)
-			this.GL.useProgram(Program)
-		else
-			throw Error(`Class "${Program.name}" is not valid as a program`)
+	UseProgram(Target) {
+		if (Target.constructor == Program) {
+			Target.Use(this)
+		}
+		else if (Shading.constructor == WebGLProgram) {
+			this.GL.useProgram(Target)
+		}
+		else {
+			throw Error(`Class "${Target.name}" is not a valid program`)
+		}
 	}
 
 
-	Viewport(SX, SY, EX, EY) {
-		this.GL.viewport(SX, SY, EX, EY)
+	Viewport(SizeX, SizeY) {
+		this.GL.viewport(0, 0, SizeX, SizeY)
 	}
 }
