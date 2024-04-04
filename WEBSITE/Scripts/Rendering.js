@@ -119,3 +119,84 @@ class Context {
 		this.GL.viewport(0, 0, SizeX, SizeY)
 	}
 }
+
+function CreateContext(Canvas, Vertex, Fragment) {
+	let Renderer = new Context()
+
+	try {
+		Renderer.Initialize(Canvas, { premultipliedAlpha: false, antialias: true })
+	}
+	catch (Exception) {
+		alert("WebGL unsupported or unavailable\n(Failed to acquire WebGL context)")
+		throw Error("WebGL unavailable.")
+	}
+
+
+	let Shader = Renderer.AddProgram(
+		Vertex,
+		Fragment
+	)
+	.AddAttributes([
+		"a_VertexPosition"
+	])
+	.AddUniforms([
+		"u_Position",
+		"u_GridSize"
+	])
+	.Use()
+
+	let GL = Renderer.GL // @todo Implement remaining methods
+
+	let Positions = [
+		-1, -1,
+		-1,  1,
+		 1, -1,
+
+		-1,  1,
+		 1, -1,
+		 1,  1,
+	]
+
+	// Setup VBO
+	let VBO = GL.createBuffer()
+	GL.bindBuffer(GL.ARRAY_BUFFER, VBO)
+	GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(Positions), GL.STATIC_DRAW)
+
+	// Setup VAO
+	let VAO = GL.createVertexArray()
+	GL.bindVertexArray(VAO)
+	GL.enableVertexAttribArray(Shader.Variables["a_VertexPosition"])
+	GL.vertexAttribPointer(Shader.Variables["a_VertexPosition"], 2, GL.FLOAT, false, 0, 0)
+
+	let Texture = GL.createTexture()
+	GL.bindTexture(GL.TEXTURE_2D, Texture)
+	GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST)
+	GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST)
+	GL.pixelStorei(GL.UNPACK_ALIGNMENT, 1)
+
+	return {GL, Renderer, Shader}
+}
+
+function DrawFrame(Shader, GL, UploadTexture, Size, Data, CameraPosition) {
+	GL.clearColor(0, 0, 0, 0)
+	GL.clear(GL.COLOR_BUFFER_BIT)
+
+	GL.uniform3fv(Shader.Variables["u_Position"], [CameraPosition.X * (1 + CameraPosition.Z), CameraPosition.Y * (1 + CameraPosition.Z), CameraPosition.Z])
+	GL.uniform2fv(Shader.Variables["u_GridSize"], [Size.X, Size.Y])
+
+	if (UploadTexture) {
+		GL.texImage2D(
+			GL.TEXTURE_2D,
+			0,
+			GL.R16UI,
+			Size.X,
+			Size.Y,
+			0,
+			GL.RED_INTEGER,
+			GL.UNSIGNED_SHORT,
+			Data,
+		)
+	}
+
+	GL.drawArrays(GL.TRIANGLES, 0, 6)
+}

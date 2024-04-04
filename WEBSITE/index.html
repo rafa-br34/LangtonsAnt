@@ -1,50 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<meta charset="UTF-8">
+		<meta charset="utf8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>Langton's ant</title>
-
+		
 		<meta name="theme-color" content="#83a1b2" data-react-helmet="true">
-
 		<meta property="og:title" content="Langton's ant"/>
 		<meta property="og:type" content="website"/>
 		<meta property="og:url" content="https://rafa-br34.github.io/LangtonsAnt"/>
-
 		<meta property="og:description" content="A web implementation of Langton's ant"/>
 		<meta property="og:site_name" content="Langton's ant"/>
 		
 		<!-- Image (og:image is required, the rest is optional) -->
 		<meta property="og:image" content="https://rafa-br34.github.io/LangtonsAnt/Thumbnail.png"/>
-		<meta property="og:image:alt" content="LRRRRRLLR Pattern on a 7680x4320 canvas iterating 76522574 times"/> <!-- Should be the same as description(?) -->
+		<meta property="og:image:alt" content="LRRRRRLLR Pattern on a 7680x4320 canvas iterating 76522574 times"/>
+		
+		<!-- Should be the same as description(?) -->
 		<meta property="og:image:url" content="http://rafa-br34.github.io/LangtonsAnt/Thumbnail.png"/>
 		<meta property="og:image:secure_url" content="https://rafa-br34.github.io/LangtonsAnt/Thumbnail.png"/>
-		<meta property="og:image:type" content="image/*"/> <!-- Let the consumer decide -->
-
+		<meta property="og:image:type" content="image/*"/>
+		
+		<!-- Let the consumer decide -->
 		<meta property="twitter:url" content="https://rafa-br34.github.io/LangtonsAnt"/>
 		<meta property="twitter:card" content="summary_large_image"/>
 		<meta property="twitter:title" content="Langton's ant"/>
 		<meta property="twitter:image" content="https://rafa-br34.github.io/LangtonsAnt/Thumbnail.png"/>
 		<meta property="twitter:description" content="A web implementation of Langton's ant"/>
-	
+		
 		<!-- Cache control -->
 		<meta http-equiv="Expires" content="0">
 		<meta http-equiv="Pragma" content="no-cache">
 		<meta http-equiv="Cache-Control" content="no-cache">
-	
+		
 		<!-- Search engines -->
 		<meta name="description" content="A web implementation of Langton's ant">
 		<meta name="keywords" content="cellular automata, langton's ant, langtons ant">
 		<meta name="author" content="rafa_br34">
-
+		
 		<link rel="icon" href="favicon.ico" type="image/x-icon"/>
 		<link rel="shortcut icon" href="favicon.ico" type="image/x-icon"/>
-
-
 		<link rel="stylesheet" href="Styles/Main.css">
 		
 		<script src="https://code.jquery.com/jquery-3.7.1.min.js"/></script>
-
+		<script src="https://unpkg.com/fflate@0.8.2"></script>
+		
 		<script src="Scripts/Debug.js"></script>
 		<script src="Scripts/Utilities.js"></script>
 		<script src="Scripts/Rendering.js"></script>
@@ -54,93 +54,135 @@
 	</head>
 	<body>
 		<!-- @todo UI improvements -->
-		<div id="CanvasContainer">
-			<canvas id="MainCanvas"></canvas>
-			
-			<div style="display: inline-grid; grid-template-columns: repeat(4, 1fr); gap: 1px;">
-				<button id="SaveImage">Save Image</button>
-				<button id="ResetCamera">Reset Camera</button>
-				<button id="ResetState">Reset State</button>
-				<button id="StartStop">Start</button>
-			</div>
-
-			<div style="display: inline-grid; grid-template-columns: repeat(4, 1fr); padding-top: 2px">
-				<span id="Stats_FPS">FPS: 0</span>
-				<span id="Stats_IPS">IPS: 0</span>
-				<span id="Stats_X">X: 0</span>
-				<span id="Stats_Y">Y: 0</span>
-
-				<span id="Stats_LiveAnts">Live Ants: 0</span>
-				<span id="Stats_Iteration">Iteration: 0</span>
-				<span id="Stats_Bandwidth">Bandwidth: 0B</span>
-				<span id="Stats_Buffer">Buffer: 0B</span>
-			</div>
-		</div>
-
+		<canvas id="MainCanvas"></canvas>
 		<div id="ManagerContainer">
-			<div class="SidePanel">
-				<!-- Simulation settings -->
-				<div class="SettingsPanel">
-					<div class="Title">Grid Settings</div>
-					<div class="Entry">
-						<div class="Name">Size: </div>
-						<span class="Value">
-							<input id="GridSizeX" type="number" min="3" step="1" max="50000" value="1000" style="width: 50%;">
-							<input id="GridSizeY" type="number" min="3" step="1" max="50000" value="1000" style="width: 50%;">
-						</span>
-					</div>
-					<div class="Entry">
-						<div class="Name">IPF: </div>
-						<span class="Value">
-							<input id="Iterations" type="number" min="0" step="1" max="100000000" value="10" style="width: 100%;">
-						</span>
-					</div>
+			<!-- Simulation settings -->
+			<div class="SettingsPanel" style="width: 50%; height: calc(100vh - 2px);">
+				<div class="Title">Grid Options</div>
+				<div class="Entry">
+					<div class="Name">Size: </div>
+					<span class="Value">
+						<input id="GridSizeX" type="number" min="3" step="1" max="50000" value="1000" style="width: 50%;">
+						<input id="GridSizeY" type="number" min="3" step="1" max="50000" value="1000" style="width: 50%;">
+					</span>
 				</div>
-
-				<div class="SettingsPanel">
-					<div class="Title">Ant Settings</div>
-					<div class="Entry">
-						<div class="Name">Position: </div>
-						<span class="Value">
-							<input id="AntPositionX" type="number" min="0" step="1" max="50000" value="500" style="width: 50%;">
-							<input id="AntPositionY" type="number" min="0" step="1" max="50000" value="500" style="width: 50%;">
-						</span>
-					</div>
-					<div class="Entry">
-						<div class="Name">Direction: </div>
-						<span class="Value">
-							<input id="AntDirectionX" type="number" min="-1" step="1" max="1" value="0" style="width: 10%;">
-							<input id="AntDirectionY" type="number" min="-1" step="1" max="1" value="1" style="width: 10%;">
-						</span>
-					</div>
-					<div class="Entry">
-						<div class="Name">Step Size: </div>
-						<span class="Value">
-							<input id="AntStepSize" type="number" min="0" step="1" max="100000" value="1" style="width: 100%;">
-						</span>
-					</div>
-					<div class="Entry">
-						<div class="Name">Rules: </div>
-						<span class="Value">
-							<input id="AntRules" type="text" value="RL" style="background-color: rgba(0, 255, 0, 0.2);" style="width: 100%;">
-						</span>
-					</div>
-					<div class="Entry">
-						<div class="Name">Wrap: </div>
-						<span class="Value">
-							<input id="AntWrap" type="checkbox" value="false">
-						</span>
-					</div>
+				<div class="Entry">
+					<div class="Name">IPF: </div>
+					<span class="Value">
+						<input id="Iterations" type="number" min="0" step="1" max="100000000" value="10" style="width: 100%;">
+					</span>
+				</div>
+				<div class="Title Spaced">Simulation Options</div>
+				<div class="Entry">
+					<span class="Value">
+						<button id="Simulation_Pause" style="background-color: rgba(0, 255, 0, 0.2);">Start</button>
+						<button id="Simulation_Step">Step</button>
+						<button id="Simulation_Reset">Reset</button>
+					</span>
+				</div>
+				<div class="Entry">
+					<span class="Value">
+						<button id="SaveImage">Save Image</button>
+					</span>
+				</div>
+				<div class="Entry">
+					<span class="Value">
+						<button id="ResetCamera">Reset Camera</button>
+					</span>
+				</div>
+				<div class="Title Spaced">Stats</div>
+				<div class="Entry">
+					<div class="Name">Live Ants: </div>
+					<span class="Value">
+						<div id="Stats_LiveAnts">0</div>
+					</span>
+				</div>
+				<div class="Entry">
+					<div class="Name">Iteration: </div>
+					<span class="Value">
+						<div id="Stats_Iteration">0</div>
+					</span>
+				</div>
+				<div class="Entry">
+					<div class="Name">Camera: </div>
+					<span class="Value">
+						<div id="Stats_Camera">0, 0, 0</div>
+					</span>
+				</div>
+				<div class="Entry">
+					<div class="Name">FPS/IPS: </div>
+					<span class="Value">
+						<div id="Stats_FPS_IPS">0/0</div>
+					</span>
+				</div>
+				<div class="Entry">
+					<div class="Name">Buffer: </div>
+					<span class="Value">
+						<div id="Stats_Buffer">0</div>
+					</span>
+				</div>
+				<div class="Entry">
+					<div class="Name">CPU -> GPU: </div>
+					<span class="Value">
+						<div id="Stats_Bandwidth">0</div>
+					</span>
+				</div>
+			</div>
+			<div class="SettingsPanel" style="width: 50%; height: calc(100vh - 2px); border-left: 0px; padding-left: 1px;">
+				<div class="Title">Ant Settings</div>
+				<div class="Entry">
+					<div class="Name">Position: </div>
+					<span class="Value">
+						<input id="Ant_PositionX" type="number" min="0" step="1" max="50000" value="500" style="width: 50%;">
+						<input id="Ant_PositionY" type="number" min="0" step="1" max="50000" value="500" style="width: 50%;">
+					</span>
+				</div>
+				<div class="Entry">
+					<div class="Name">Direction: </div>
+					<span class="Value">
+						<input id="Ant_DirectionX" type="number" min="-1" step="1" max="1" value="0" style="width: 10%;">
+						<input id="Ant_DirectionY" type="number" min="-1" step="1" max="1" value="1" style="width: 10%;">
+					</span>
+				</div>
+				<div class="Entry">
+					<div class="Name">Step Size: </div>
+					<span class="Value">
+						<input id="Ant_StepSize" type="number" min="0" step="1" max="100000" value="1" style="width: 100%;">
+					</span>
+				</div>
+				<div class="Entry">
+					<div class="Name">Rules: </div>
+					<span class="Value">
+						<input id="Ant_Rules" type="text" value="RL" style="background-color: rgba(0, 255, 0, 0.2);" style="width: 100%;">
+					</span>
+				</div>
+				<div class="Entry">
+					<div class="Name">Wrap: </div>
+					<span class="Value">
+						<input id="Ant_Wrap" type="checkbox" value="true">
+					</span>
+				</div>
+				<div class="Entry">
+					<div class="Name">Enabled: </div>
+					<span class="Value">
+						<input id="Ant_Enabled" type="checkbox" value="true">
+					</span>
+				</div>
+				<div class="Title Spaced">Ant List</div>
+				<div class="Entry">
+					<span class="Value">
+						<button id="CreateAnt">Create</button>
+						<button id="RemoveAnt">Remove</button>
+						<button id="CloneAnt">Clone</button>
+					</span>
+				</div>
+				<div class="Entry" style="max-height: calc(80vh - 4px);">
+					<span class="Value">
+						<div id="AntList" class="List" style="max-height: 100%;">
+						</div>
+					</span>
 				</div>
 				
-				<div class="InnerPanel" style="width: 100%">
-					<span id="AntList" class="ListContainer" style="width: 100%; margin: -1px; border: 1px solid"></span>
-
-					<div style="height: 20px; display: grid; grid-template-columns: repeat(2, 50%);">
-						<button id="CreateAnt">+</button>
-						<button id="RemoveAnt">-</button>
-					</div>
-				</div>
 			</div>
 		</div>
 	</body>

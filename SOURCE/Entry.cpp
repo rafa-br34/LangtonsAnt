@@ -131,7 +131,7 @@ int main(int ArgCount, const char* ArgValues[]) {
 
 	std::cout << "State machine: " << StateMachineToString(StateMachine, "") << '\n';
 
-	Vector2<int> CanvasSize(30720, 30720);//{ 30720, 17280 };
+	Vector2<int> CanvasSize(10, 10);//{ 30720, 17280 };
 
 	SimulationState<uint8_t, int> Simulation;
 	EncoderState Encoder;
@@ -149,8 +149,8 @@ int main(int ArgCount, const char* ArgValues[]) {
 	auto Center = CanvasSize / Vector2(2, 2);
 	//Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {C,C,C,C,C,C,U,C,C,C,C,C,R45,R,R45,L135,U,C,U,L,L,R135,L45,R45,R,R135,L45,R,R,R45}, true));
 	
-	Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L,C}, true));
 	Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L,R,R,L,R,R,L,R,R,L,R}, true));
+	Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L,C}, true));
 
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 output.mp4
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 -s 1920x1920 output.mp4
@@ -158,19 +158,20 @@ int main(int ArgCount, const char* ArgValues[]) {
 	// ffmpeg -r 30 -i "Frames/%d.png" -c:v libx264 -preset veryslow -qp 0 -s 7680x4320 output.mp4
 	// 1ull * 1000000000ull 1b
 
-	size_t Iterations = 6ull * 1000000000ull;
-	double FrameRate = 30.0; // Video frame rate
-	double Time = 120.0; // Video time
+	size_t Iterations = 1ull * 100ull;
+	double FrameRate = 1.0; // Video frame rate
+	double Time = 100.0; // Video time
 	size_t Frames = size_t(Time * FrameRate);
 	
 	size_t CaptureDelta = size_t(double(Iterations) / double(Frames));
 
 	Simulation.Reset();
-	Encoder.Threads = 70;
+	Encoder.Threads = 2;
 	for (size_t i = 0; i < Frames; i++) {
-		std::cout << i << '\n';
-		Simulation.Simulate(CaptureDelta);
-		Encoder.EncodeAsync(Simulation, std::string("Frames/State_") + std::to_string(i) +".png");
+		std::cout << i << ' ' << Simulation.Simulate(CaptureDelta) << '/' << CaptureDelta << '\n';
+		
+		//Encoder.EncodeSync(Simulation, std::string("Frames/") + std::to_string(i) +".png");
+		Encoder.EncodeAsync(Simulation, std::string("State_") + std::to_string(i) +".png");
 	}
 	
 	Encoder.WaitJobs();

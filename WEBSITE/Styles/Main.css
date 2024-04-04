@@ -12,13 +12,15 @@
 
 body {
 	background-color: var(--Background);
-	display: inline-flex;
-	overflow-x: hidden;
+	overflow: hidden;
 	margin: 0px;
+	display: grid;
+	grid-template-columns: max-content max-content 1fr;
+	grid-gap: 0px;
 }
 
 button {
-	border: 1px solid;
+	border: solid var(--ForegroundActive) 1px;
 	background: var(--BackgroundActive);
 	color: var(--Text);
 
@@ -80,7 +82,7 @@ input[type="text"] {
 	padding: 0px;
 	margin: 0px;
 	box-sizing: border-box;
-	max-width: 100%;
+	width: 100%;
 
 
 	&:disabled {
@@ -90,6 +92,7 @@ input[type="text"] {
 
 span, label, div {
 	color: var(--Text);
+	text-wrap: nowrap;
 }
 
 canvas {
@@ -97,37 +100,16 @@ canvas {
 	padding: 0px;
 }
 
-
 #MainCanvas {
-	width: calc(100% - 2px);
-	height: auto;
-}
-
-#CanvasContainer {
-	display: grid;
-	width: calc(100vh - 100px);
-	max-width: calc(100vh - 100px);
-	height: calc(100vh - 4px);
-	border: var(--Text) 1px solid;
-	padding: 1px;
+	width: calc(100vh - 2px);
+	height: calc(100vh - 2px);
 }
 
 #ManagerContainer {
-	display: grid;
-	width: calc(calc(100vw - calc(100vh - 100px)) - 7px);
-	height: calc(100vh - 4px);
 	border: var(--Text) 1px solid;
-	padding: 1px; position: relative;
-	left: -1px;
-}
-
-.SidePanel {
-	border: var(--Text) 1px solid;
-	margin: -2px;
-	margin-bottom: 1px;
-	height: calc(100% + 2px);
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
+	margin-left: -1px;
+	width: calc(100vw - 100vh);
+	display: flex;
 }
 
 /* Settings panel */
@@ -146,10 +128,10 @@ canvas {
 	margin-bottom: 2px;
 	border-top: var(--Text) 1px solid;
 	margin-top: -1px;
-}
 
-.SettingsPanel .Title.Spaced {
-	margin-top: 4px;
+	&.Spaced {
+		margin-top: 8px;
+	}
 }
 
 .SettingsPanel .Entry {
@@ -170,27 +152,41 @@ canvas {
 	max-width: 40%;
 	gap: 1px;
 	z-index: 1;
-}
 
-.OptionName {
-	display: inline-block;
+	&.Left {
+		margin-left: calc(60% - 3px);
+		margin-right: 0%;
+	}
+}
+.SettingsPanel .Entry .Value button {
 	width: 100%;
-	text-align: center;
 }
 
-.ListContainer {
-	height: 100%;
-	max-height: calc(100vh - 21px);
-	display: inherit;
-	text-align: center;
-	overflow-y: scroll;
+.List {
+	border: var(--ForegroundActive) 1px solid;
+	width: 100%;
+	height: fit-content;
+	overflow-y: auto;
 }
 
-.ListItem {
+.List .Item {
 	user-select: none;
-	background: rgba(0,0,0,0.4);
+	text-align: center;
+	transition: border-width 100ms ease-in-out;
+
+	&.Selected {
+		border-right: 4px inset;
+		border-left: 4px outset;
+
+		&:hover {
+			border-right: 2px inset;
+			border-left: 2px outset;
+		}
+	}
 
 	&:hover {
-		background: rgba(0,0,0,0.2);
+		border-right: 2px outset;
+		border-left: 2px inset;
+		background-color: rgba(0.1, 0.1, 0.1, 0.2);
 	}
 }

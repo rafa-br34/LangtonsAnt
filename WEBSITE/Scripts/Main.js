@@ -1,92 +1,11 @@
-function CreateContext(Canvas, Vertex, Fragment) {
-	let Renderer = new Context()
 
-	try {
-		Renderer.Initialize(Canvas, { premultipliedAlpha: false, antialias: true })
-	}
-	catch (Exception) {
-		alert("WebGL unsupported or unavailable\n(Failed to acquire WebGL context)")
-		throw Error("WebGL unavailable.")
-	}
-
-
-	let Shader = Renderer.AddProgram(
-		Vertex,
-		Fragment
-	)
-	.AddAttributes([
-		"a_VertexPosition"
-	])
-	.AddUniforms([
-		"u_Position",
-		"u_GridSize"
-	])
-	.Use()
-
-	let GL = Renderer.GL // @todo Implement remaining methods
-
-	let Positions = [
-		-1, -1,
-		-1,  1,
-		 1, -1,
-
-		-1,  1,
-		 1, -1,
-		 1,  1,
-	]
-
-	// Setup VBO
-	let VBO = GL.createBuffer()
-	GL.bindBuffer(GL.ARRAY_BUFFER, VBO)
-	GL.bufferData(GL.ARRAY_BUFFER, new Float32Array(Positions), GL.STATIC_DRAW)
-
-	// Setup VAO
-	let VAO = GL.createVertexArray()
-	GL.bindVertexArray(VAO)
-	GL.enableVertexAttribArray(Shader.Variables["a_VertexPosition"])
-	GL.vertexAttribPointer(Shader.Variables["a_VertexPosition"], 2, GL.FLOAT, false, 0, 0)
-
-	let Texture = GL.createTexture()
-	GL.bindTexture(GL.TEXTURE_2D, Texture)
-	GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST)
-	GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST)
-	GL.pixelStorei(GL.UNPACK_ALIGNMENT, 1)
-
-	return {GL, Renderer, Shader}
-}
-
-function Draw(Shader, GL, UploadTexture, Size, Data, CameraPosition) {
-	GL.clearColor(0, 0, 0, 0)
-	GL.clear(GL.COLOR_BUFFER_BIT)
-
-	GL.uniform3fv(Shader.Variables["u_Position"], [CameraPosition.X * (1 + CameraPosition.Z), CameraPosition.Y * (1 + CameraPosition.Z), CameraPosition.Z])
-	GL.uniform2fv(Shader.Variables["u_GridSize"], [Size.X, Size.Y])
-
-	if (UploadTexture) {
-		GL.texImage2D(
-			GL.TEXTURE_2D,
-			0,
-			GL.R16UI,
-			Size.X,
-			Size.Y,
-			0,
-			GL.RED_INTEGER,
-			GL.UNSIGNED_SHORT,
-			Data,
-		)
-	}
-
-	GL.drawArrays(GL.TRIANGLES, 0, 6)
-}
 
 async function Main() {
 	let MainCanvas = $("#MainCanvas")
 
 	let Stats = {
-		FPS: $("#Stats_FPS"),
-		IPS: $("#Stats_IPS"),
-		X: $("#Stats_X"),
-		Y: $("#Stats_Y"),
+		FPS_IPS: $("#Stats_FPS_IPS"),
+		Camera: $("#Stats_Camera"),
 
 		LiveAnts: $("#Stats_LiveAnts"),
 		Iteration: $("#Stats_Iteration"),
@@ -120,6 +39,45 @@ async function Main() {
 
 	let ReuploadTexture = false
 
+	function UnloadSiteLink() {
+		let Serialized = JSON.stringify({
+			Size: GridSize,
+			Ants: SimulationObject.TemplateAnts.slice(0).map(AntObject => AntObject.ToObject()),
+		})
+		
+		let Compressed = fflate.compressSync(fflate.strToU8(Serialized), { level: 9, mem: 12 })
+
+		let Encoded = ""; Compressed.forEach((Value) => { Encoded += String.fromCharCode(Value) })
+		
+		window.history.replaceState(
+			null,
+			document.title,
+			`${window.location.pathname}?v=${encodeURIComponent(btoa(Encoded))}`
+		)
+	}
+
+	function LoadSiteLink() {
+		let Encoded = (new URL(window.location.href)).searchParams.get("v")
+		if (!Encoded) { return }
+
+		let Compressed = new Uint8Array(atob(decodeURIComponent(Encoded)).split('').map(Value => Value.charCodeAt(0)))
+
+		let Serialized = fflate.strFromU8(fflate.decompressSync(Compressed))
+
+		let { Size, Ants } = JSON.parse(Serialized)
+
+		GridConfig.Size.X.val(Size.X)
+		GridConfig.Size.Y.val(Size.Y)
+
+		console.log(Ants.map(Ant.FromObject))
+		for (let AntObject of Ants.map(Ant.FromObject)) {
+			console.log(AntObject)
+			SimulationObject.TemplateAnts.push(AntObject)
+		}
+		
+	}
+	LoadSiteLink()
+
 	// Setup canvas listeners
 	{
 		function UpdateCanvasSize() {
@@ -131,7 +89,6 @@ async function Main() {
 			
 			Renderer.Viewport(Width, Width)
 		}
-	
 		window.addEventListener("resize", UpdateCanvasSize)
 		UpdateCanvasSize()
 
@@ -152,8 +109,7 @@ async function Main() {
 					CameraPosition.Y -= DY / RY
 				}
 
-				Stats.X.innerHTML = `X: ${Math.round(CameraPosition.X * 1000) / 1000}`
-				Stats.Y.innerHTML = `Y: ${Math.round(CameraPosition.Y * 1000) / 1000}`
+				Stats.Camera.html(`${Round(CameraPosition.X, 3)}, ${Round(CameraPosition.Y, 3)}, ${Round(CameraPosition.Z, 3)}`)
 			}
 		})
 
@@ -169,10 +125,8 @@ async function Main() {
 
 			CameraPosition.X += X / 2
 			CameraPosition.Y += Y / 2
-
-			Stats.X.innerHTML = `X: ${Math.round(CameraPosition.X * 1000) / 1000}`
-			Stats.Y.innerHTML = `Y: ${Math.round(CameraPosition.Y * 1000) / 1000}`
 			*/
+			Stats.Camera.html(`${Round(CameraPosition.X, 3)}, ${Round(CameraPosition.Y, 3)}, ${Round(CameraPosition.Z, 3)}`)
 		})
 	}
 
@@ -183,9 +137,10 @@ async function Main() {
 		function UpdateGridSize() {
 			GridData = SimulationObject.ResizeGrid(Number(Size.X.val()), Number(Size.Y.val()))
 
-			Stats.Buffer.html(`Buffer: ${MeasureData(GridData.byteLength, 2)}`)
+			Stats.Buffer.html(MeasureData(GridData.byteLength, 2))
 
 			ReuploadTexture = true
+			UnloadSiteLink()
 		}
 		Size.X.on("input", UpdateGridSize)
 		Size.Y.on("input", UpdateGridSize)
@@ -200,11 +155,12 @@ async function Main() {
 
 	// Setup ant interface
 	{
-		let Position = { X: $("#AntPositionX"), Y: $("#AntPositionY") }
-		let Direction = { X: $("#AntDirectionX"), Y: $("#AntDirectionY") }
-		let StepSize = $("#AntStepSize")
-		let Rules = $("#AntRules")
-		let Wrap = $("#AntWrap")
+		let Ant_Position = { X: $("#Ant_PositionX"), Y: $("#Ant_PositionY") }
+		let Ant_Direction = { X: $("#Ant_DirectionX"), Y: $("#Ant_DirectionY") }
+		let Ant_StepSize = $("#Ant_StepSize")
+		let Ant_Rules = $("#Ant_Rules")
+		let Ant_Wrap = $("#Ant_Wrap")
+		let Ant_Enabled = $("#Ant_Enabled")
 		
 		let ElementToAnt = new Map()
 		
@@ -212,32 +168,115 @@ async function Main() {
 		let AntObject = null // Selected ant
 
 		function UpdateOptions() {
-			for (let Item of [...Object.values(Position), ...Object.values(Direction), Rules]) {
+			for (let Item of [...Object.values(Ant_Position), ...Object.values(Ant_Direction), Ant_StepSize, Ant_Rules, Ant_Wrap, Ant_Enabled]) {
 				SetEnabled(Item, Selected)
 			}
+
+			UnloadSiteLink()
 
 			if (!Selected) { return }
 			AntObject = ElementToAnt.get(Selected)
 
-			Position.X.val(AntObject.Position.X)
-			Position.Y.val(AntObject.Position.Y)
+			Ant_Position.X.val(AntObject.Position.X)
+			Ant_Position.Y.val(AntObject.Position.Y)
 
-			Direction.X.val(AntObject.Direction.X)
-			Direction.Y.val(AntObject.Direction.Y)
+			Ant_Direction.X.val(AntObject.Direction.X)
+			Ant_Direction.Y.val(AntObject.Direction.Y)
 
-			StepSize.val(AntObject.StepSize)
-			Wrap.prop("checked", AntObject.Wrap)
+			Ant_StepSize.val(AntObject.StepSize)
+			Ant_Wrap.prop("checked", AntObject.Wrap)
 
-			Rules.val(StateMachineToString(AntObject.StateMachine))
+			Ant_Enabled.prop("checked", SimulationObject.TemplateAnts.findIndex(Value => Value == AntObject) >= 0)
+
+			Ant_Rules.val(StateMachineToString(AntObject.StateMachine))
+		}
+
+		function UpdateAnt() {
+			if (!Selected) { return }
+			AntObject.Position.X = Number(Ant_Position.X.val())
+			AntObject.Position.Y = Number(Ant_Position.Y.val())
+			
+			AntObject.Direction.X = Number(Ant_Direction.X.val())
+			AntObject.Direction.Y = Number(Ant_Direction.Y.val())
+
+			AntObject.StepSize = Number(Ant_StepSize.val())
+
+			AntObject.Wrap = Ant_Wrap.prop("checked")
+
+			SimulationObject.Reset()
+			UpdateOptions()
 		}
 		
-		let AntList = $("#AntList"), CreateAnt = $("#CreateAnt"), RemoveAnt = $("#RemoveAnt")
+		[
+			...Object.values(Ant_Position),
+			...Object.values(Ant_Direction),
+			Ant_StepSize,
+			Ant_Wrap
+		].forEach(Item => Item.on("change", UpdateAnt))
+
+		Ant_Enabled.on("change", () => {
+			if (!Ant_Enabled.prop("checked")) {
+				SimulationObject.RemoveAnt(AntObject)
+			}
+			else {
+				SimulationObject.AddAnt(AntObject)
+			}
+
+			SimulationObject.Reset()
+		})
+
+
+		Ant_Rules.on("change", () => {
+			if (!Selected) { return }
+
+			let [StateMachine, Success] = ParseStateMachine(Ant_Rules.val())
+			
+			if (!Success) {
+				Ant_Rules.css("background-color", "rgba(255, 0, 0, 0.2)")
+				return
+			}
+			else {
+				Ant_Rules.css("background-color", "rgba(0, 255, 0, 0.2)")
+				AntObject.StateMachine = StateMachine
+			}
+			
+			SimulationObject.Reset()
+			UpdateOptions()
+		})
+		
+		let AntList = $("#AntList")
+		let CreateAnt = $("#CreateAnt")
+		let RemoveAnt = $("#RemoveAnt")
+		let CloneAnt = $("#CloneAnt")
+
+		function AddAnt(NewAnt, Select) {
+			let NewLabel = CreateElement("div", AntList, { class: "Item" + (Select ? " Selected" : "") }, `Ant ${AntList.children().length + 1}`)
+
+			ElementToAnt.set(NewLabel, NewAnt)
+
+			if (!Select) {
+				SetEnabled(RemoveAnt, true)
+				SetEnabled(CloneAnt, true)
+				AntObject = NewAnt
+				Selected = NewLabel
+			}
+
+			SimulationObject.AddAnt(NewAnt)
+			SimulationObject.Reset()
+			UpdateOptions()
+		}
 
 		AntList.on("click", (EventObject) => {
 			if (EventObject.target == EventObject.currentTarget) { return }
-			if (Selected) { Selected.setAttribute("style", "") }
+			if (Selected) { Selected.setAttribute("class", "Item") }
 
-			(Selected = EventObject.target).setAttribute("style", "background: rgba(0,0,0,0.1);")
+			if (EventObject.target == Selected) {
+				Selected = null
+				UpdateOptions()
+				return
+			}
+
+			(Selected = EventObject.target).setAttribute("class", "Item Selected")
 			UpdateOptions()
 		})
 
@@ -249,13 +288,7 @@ async function Main() {
 				Array.from({length: (Math.random() * 22) + 6}, () => States[Math.floor(Math.random() * States.length)])
 			)
 
-			let NewLabel = CreateElement("div", AntList, { class: "ListItem" }, `Ant ${AntList.children().length + 1}`)
-
-			ElementToAnt.set(NewLabel, NewAnt)
-			SimulationObject.AddAnt(NewAnt)
-
-			SetEnabled(RemoveAnt, true)
-			SimulationObject.Reset()
+			AddAnt(NewAnt, !Selected)
 		})
 		
 		RemoveAnt.on("click", () => {
@@ -265,7 +298,6 @@ async function Main() {
 			if (!Selected && !Children.length) { return }
 
 			Selected = Selected || Children[0]
-			
 			AntObject = ElementToAnt.get(Selected)
 			
 			Selected.remove()
@@ -273,73 +305,67 @@ async function Main() {
 			
 			SimulationObject.RemoveAnt(AntObject)
 			SimulationObject.Reset()
-		})
-
-		function UpdateAnt() {
-			if (!Selected) { return }
-			AntObject.Position.X = Number(Position.X.val())
-			AntObject.Position.Y = Number(Position.Y.val())
-			
-			AntObject.Direction.X = Number(Direction.X.val())
-			AntObject.Direction.Y = Number(Direction.Y.val())
-
-			AntObject.StepSize = Number(StepSize.val())
-
-			AntObject.Wrap = Wrap.prop("checked")
-
-			SimulationObject.Reset()
-		}
-		[...Object.values(Position), ...Object.values(Direction), StepSize, Wrap].forEach(Item => Item.on("change", UpdateAnt))
-
-
-		Rules.on("change", () => {
-			if (!Selected) { return }
-
-			let [StateMachine, Success] = ParseStateMachine(Rules.val())
-			
-			if (!Success) {
-				Rules.css("background-color", "rgba(255, 0, 0, 0.2)")
-				return
-			}
-			else {
-				Rules.css("background-color", "rgba(0, 255, 0, 0.2)")
-				AntObject.StateMachine = StateMachine
-			}
-			
-			SimulationObject.Reset()
 			UpdateOptions()
 		})
 
-		UpdateOptions()
+		CloneAnt.on("click", () => {
+			if (!Selected) { return }
+
+			let NewAnt = new Ant(
+				AntObject.Position.X, AntObject.Position.Y,
+				AntObject.Direction.X, AntObject.Direction.Y,
+				AntObject.StateMachine,
+				AntObject.Wrap,
+				AntObject.StepSize
+			)
+
+			AddAnt(NewAnt, false)
+		})
+
+		for (let AntObject of SimulationObject.TemplateAnts) {
+			ElementToAnt.set(
+				CreateElement("div", AntList, { class: "Item" }, `Ant ${AntList.children().length + 1}`),
+				AntObject
+			)
+		}
+		SimulationObject.Reset()
+
 		SetEnabled(RemoveAnt, AntList.children.length > 0)
+		UpdateOptions()
 	}
 
 
 	// Setup interface
 	let Simulating = false
 	{
-		let StartStop = $("#StartStop")
+		let StartStop = $("#Simulation_Pause")
 
 		let Items = Object.values(GridConfig.Size)
 		StartStop.on("click", () => {
 			if (Simulating) {
 				StartStop.html("Start")
+				StartStop.css("background-color", "rgba(0, 255, 0, 0.2)")
 				Simulating = false
 	
 				for (let Item of Items) SetEnabled(Item, true)
 			}
 			else {
 				StartStop.html("Stop")
+				StartStop.css("background-color", "rgba(255, 0, 0, 0.2)")
 				Simulating = true
 	
 				for (let Item of Items) SetEnabled(Item, false)
 			}
 		})
 	
-		$("#ResetCamera").on("click", () => { CameraPosition = { X: 0, Y: 0, Z: 0 } })
-		$("#ResetState").on("click",  () => { ReuploadTexture = true; SimulationObject.Reset() })
+		$("#Simulation_Reset").on("click",  () => { ReuploadTexture = true; SimulationObject.Reset() })
+		$("#Simulation_Step").on("click",   () => { ReuploadTexture = true; SimulationObject.Update(IPF) })
+		
+		$("#ResetCamera").on("click", () => { CameraPosition = { X: 0, Y: 0, Z: 0 }; Stats.Camera.html("0, 0, 0") })
 		$("#SaveImage").on("click",   () => { alert("Not yet implemented") })
 	}
+
+
 
 	let FrameTimer = new FrameTimes()
 	
@@ -354,12 +380,10 @@ async function Main() {
 			FrameTimer.SampleCount = Math.round(Math.max(Math.min(FPS, 512), 32) * 0.5) // Automatically detect refresh rate and set buffer size to 0.5 seconds
 		}
 
-		Stats.FPS.html(`FPS: ${Round(FPS, 2)}`)
-		Stats.IPS.html(`IPS: ${Round(FPS * IPF, 2)}`)
-
-		Stats.Iteration.html(`Iteration: ${SimulationObject.TotalIterations}`)
-		Stats.Bandwidth.html(`Bandwidth: ${MeasureData(GridData.byteLength * FPS)}/s`)
-		Stats.LiveAnts.html(`Live Ants: ${SimulationObject.Ants.length}`)
+		Stats.Bandwidth.html(`${Simulating ? MeasureData(GridData.byteLength * FPS) : "0B"}/s`)
+		Stats.Iteration.html(SimulationObject.TotalIterations)
+		Stats.LiveAnts.html(SimulationObject.Ants.length)
+		Stats.FPS_IPS.html(`${Round(FPS, 2)}/${Round(FPS * IPF, 2)}`)
 	}
 	
 
@@ -370,7 +394,14 @@ async function Main() {
 		UpdateCounters(Delta)
 		if (Simulating) SimulationObject.Update(IPF)
 		
-		Draw(Shader, GL, ReuploadTexture || Simulating, GridSize, GridData, CameraPosition); ReuploadTexture = false
+		DrawFrame(
+			Shader,
+			GL,
+			ReuploadTexture || Simulating,
+			GridSize, GridData,
+			CameraPosition
+		)
+		ReuploadTexture = false
 
 		Last = FrameTime
 		return requestAnimationFrame(UpdateFrame)

@@ -185,6 +185,20 @@ class Ant {
 		return 1
 	}
 
+	ToObject() {
+		return {
+			Direction: { X: this.Direction.X, Y: this.Direction.Y },
+			Position: { X: this.Position.X, Y: this.Position.Y },
+			StateMachine: this.StateMachine.slice(0),
+			StepSize: this.StepSize,
+			Wrap: this.Wrap
+		}
+	}
+
+	static FromObject(Value) {
+		return new Ant(...Object.values(Value.Position), ...Object.values(Value.Direction), Value.StateMachine, Value.Wrap, Value.StepSize)
+	}
+
 	constructor(X, Y, DX, DY, StateMachine, Wrap = false, StepSize = 1) {
 		this.Position.X = X
 		this.Position.Y = Y

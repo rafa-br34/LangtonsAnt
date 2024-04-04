@@ -9,7 +9,7 @@ class SimulationState {
 	Reset() {
 		this.Ants = []
 		for (let AntObject of this.TemplateAnts) {
-						this.Ants.push(new Ant(AntObject.Position.X, AntObject.Position.Y, AntObject.Direction.X, AntObject.Direction.Y, AntObject.StateMachine, AntObject.Wrap, AntObject.StepSize))
+			this.Ants.push(new Ant(AntObject.Position.X, AntObject.Position.Y, AntObject.Direction.X, AntObject.Direction.Y, AntObject.StateMachine, AntObject.Wrap, AntObject.StepSize))
 		}
 		
 		this.TotalIterations = 0

@@ -66,18 +66,16 @@ private:
 			m_PaletteCache.push_back(Coloring(s));
 	}
 
-	lodepng::State m_AcquireEncoderState(size_t StateCount) {
+	template<typename CellType>
+	lodepng::State m_SetupEncoderState(size_t StateCount) {
 		lodepng::State State = {};
 
 		lodepng_state_init(&State);
-
-		unsigned int Depth = 2, RawDepth = (unsigned int)std::floor(std::log2(StateCount) + 1.0);
-		while (Depth < RawDepth) Depth *= 2;
 		
 		State.info_raw.colortype = LCT_PALETTE;
-		State.info_raw.bitdepth = Depth;
+		State.info_raw.bitdepth = sizeof(CellType) * 8;
 		State.info_png.color.colortype = LCT_PALETTE;
-		State.info_png.color.bitdepth = Depth;
+		State.info_png.color.bitdepth = sizeof(CellType) * 8;
 		State.encoder.auto_convert = 0;
 
 		// DEBUG_PRINT("Setting up palette with %d colors (%d bit depth):\n", (int)StateCount, (int)Depth);
@@ -105,19 +103,14 @@ private:
 		return State;
 	}
 
-	void m_DiscardEncoderState(lodepng::State& State) {
-		lodepng_state_cleanup(&State);
-	}
-
 	template<typename CellType, typename SizeType>
 	unsigned int m_EncodeBuffer(const CellType* Grid, const Vector2<SizeType>& Size, size_t StateCount, const std::string& Path) {
 		std::vector<uint8_t> Buffer = {};
 		unsigned int         Result = 0;
-		lodepng::State       State = m_AcquireEncoderState(StateCount);
+		lodepng::State       State = m_SetupEncoderState<CellType>(StateCount);
 
 		Result = lodepng::encode(Buffer, (const unsigned char*)Grid, (unsigned int)Size.X, (unsigned int)Size.Y, State);
 
-		m_DiscardEncoderState(State);
 		if (Result) { DEBUG_PRINT("lodepng::encode -> %d\n", Result); return Result; }
 
 		Result = lodepng::save_file(Buffer, Path);
