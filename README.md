@@ -35,13 +35,13 @@ Defines ants using the following format `P(X,Y)D(DX,DY)M(M)S(S)F(W?)` which can 
 - `F` Optional section that defines flags (W: Wrap)
 
 Example:  
-`-a P(500,500)D(0,-1)M(RL)`: Creates a single ant with the state machine `RL`
-`-a P(500,500)D(0,-1)M(0)S(10)F(W);P(500,500)D(0,1)M(1)`: Creates two ants using state machine 0 and 1, ant 0 wraps and has a step size of 10
+`-a P(500,500)D(0,-1)M(RL)`: Creates a single ant with the state machine `RL`  
+`-a P(500,500)D(0,-1)M(0)S(10)F(W);P(500,500)D(0,1)M(1)`: Creates two ants using state machine 0 and 1, ant 0 wraps and has a step size of 10  
 #### `-i`:
 Defines how many iterations should be evaluated, by default it will run until all ants run out of bounds or (if wrap is enabled) will run indefinitely. Alternatively it can be specified as time to signal that it should run based on time instead of iterations.  
 Example:  
-`-i i50b`: Run for 50 billion iterations
-`-i t100s`: Run a maximum of 100 seconds
+`-i i50b`: Run for 50 billion iterations  
+`-i t100s`: Run a maximum of 100 seconds  
 #### `-s`:
 Defines when a canvas snapshot should be taken. Can be chained using `;`
 - `i<interval?>`: Snapshots every `interval` iterations (if not specified 1 is assumed)
