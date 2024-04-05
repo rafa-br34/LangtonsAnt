@@ -8,7 +8,7 @@ uniform vec2 u_GridSize;
 in vec4 a_VertexPosition;
 
 // To fragment shader
-out vec4 s_VertexPosition;
+out vec2 s_VertexPosition;
 
 void main() {
 	vec4 Position = (a_VertexPosition + vec4(u_Position.x, u_Position.y, 0.0, u_Position.z));
@@ -21,5 +21,5 @@ void main() {
 	else
 		gl_Position = Position * vec4(1.0, RY, 1.0, 1.0);
 
-	s_VertexPosition = (a_VertexPosition + 1.0) / 2.0;
+	s_VertexPosition = (a_VertexPosition.xy + 1.0) / 2.0;
 }

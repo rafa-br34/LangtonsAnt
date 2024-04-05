@@ -131,7 +131,7 @@ int main(int ArgCount, const char* ArgValues[]) {
 
 	std::cout << "State machine: " << StateMachineToString(StateMachine, "") << '\n';
 
-	Vector2<int> CanvasSize(10, 10);//{ 30720, 17280 };
+	Vector2<int> CanvasSize(1000, 1000);//{ 30720, 17280 };
 
 	SimulationState<uint8_t, int> Simulation;
 	EncoderState Encoder;
@@ -147,10 +147,12 @@ int main(int ArgCount, const char* ArgValues[]) {
 	Ants.push_back(Ant<uint8_t>(Center - Vector2(10, 0), Vector2<int8_t>( 1, 0), StateMachine, StateMachineSize));
 	//*/
 	auto Center = CanvasSize / Vector2(2, 2);
+	Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L}, true));
+
 	//Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {C,C,C,C,C,C,U,C,C,C,C,C,R45,R,R45,L135,U,C,U,L,L,R135,L45,R45,R,R135,L45,R,R,R45}, true));
 	
-	Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L,R,R,L,R,R,L,R,R,L,R}, true));
-	Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L,C}, true));
+	//Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L,R,R,L,R,R,L,R,R,L,R}, true));
+	//Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L,C}, true));
 
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 output.mp4
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 -s 1920x1920 output.mp4
@@ -158,9 +160,9 @@ int main(int ArgCount, const char* ArgValues[]) {
 	// ffmpeg -r 30 -i "Frames/%d.png" -c:v libx264 -preset veryslow -qp 0 -s 7680x4320 output.mp4
 	// 1ull * 1000000000ull 1b
 
-	size_t Iterations = 1ull * 100ull;
+	size_t Iterations = 1ull * 16000ull;
 	double FrameRate = 1.0; // Video frame rate
-	double Time = 100.0; // Video time
+	double Time = 1.0; // Video time
 	size_t Frames = size_t(Time * FrameRate);
 	
 	size_t CaptureDelta = size_t(double(Iterations) / double(Frames));

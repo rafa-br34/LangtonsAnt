@@ -1,5 +1,16 @@
 
 
+function ReadVec2Input(Item) {
+	return { X: Number(Item.X.val()), Y: Number(Item.Y.val()) }
+
+}
+
+function SetVec2Input(Item, Value) {
+	Item.X.val(Value.X)
+	Item.Y.val(Value.Y)
+}
+
+
 async function Main() {
 	let MainCanvas = $("#MainCanvas")
 
@@ -66,12 +77,9 @@ async function Main() {
 
 		let { Size, Ants } = JSON.parse(Serialized)
 
-		GridConfig.Size.X.val(Size.X)
-		GridConfig.Size.Y.val(Size.Y)
+		SetVec2Input(GridConfig.Size, Size)
 
-		console.log(Ants.map(Ant.FromObject))
 		for (let AntObject of Ants.map(Ant.FromObject)) {
-			console.log(AntObject)
 			SimulationObject.TemplateAnts.push(AntObject)
 		}
 		
@@ -173,15 +181,13 @@ async function Main() {
 			}
 
 			UnloadSiteLink()
+			SetEnabled(CloneAnt, Selected)
 
 			if (!Selected) { return }
 			AntObject = ElementToAnt.get(Selected)
-
-			Ant_Position.X.val(AntObject.Position.X)
-			Ant_Position.Y.val(AntObject.Position.Y)
-
-			Ant_Direction.X.val(AntObject.Direction.X)
-			Ant_Direction.Y.val(AntObject.Direction.Y)
+			
+			SetVec2Input(Ant_Direction, AntObject.Direction)
+			SetVec2Input(Ant_Position, AntObject.Position)
 
 			Ant_StepSize.val(AntObject.StepSize)
 			Ant_Wrap.prop("checked", AntObject.Wrap)
@@ -193,11 +199,9 @@ async function Main() {
 
 		function UpdateAnt() {
 			if (!Selected) { return }
-			AntObject.Position.X = Number(Ant_Position.X.val())
-			AntObject.Position.Y = Number(Ant_Position.Y.val())
 			
-			AntObject.Direction.X = Number(Ant_Direction.X.val())
-			AntObject.Direction.Y = Number(Ant_Direction.Y.val())
+			AntObject.Direction = ReadVec2Input(Ant_Direction)
+			AntObject.Position = ReadVec2Input(Ant_Position)
 
 			AntObject.StepSize = Number(Ant_StepSize.val())
 
@@ -254,8 +258,9 @@ async function Main() {
 
 			ElementToAnt.set(NewLabel, NewAnt)
 
-			if (!Select) {
-				SetEnabled(RemoveAnt, true)
+			SetEnabled(RemoveAnt, true)
+
+			if (Select) {
 				SetEnabled(CloneAnt, true)
 				AntObject = NewAnt
 				Selected = NewLabel
@@ -358,11 +363,10 @@ async function Main() {
 			}
 		})
 	
-		$("#Simulation_Reset").on("click",  () => { ReuploadTexture = true; SimulationObject.Reset() })
-		$("#Simulation_Step").on("click",   () => { ReuploadTexture = true; SimulationObject.Update(IPF) })
-		
-		$("#ResetCamera").on("click", () => { CameraPosition = { X: 0, Y: 0, Z: 0 }; Stats.Camera.html("0, 0, 0") })
-		$("#SaveImage").on("click",   () => { alert("Not yet implemented") })
+		$("#Simulation_Reset").on("click", () => { ReuploadTexture = true; SimulationObject.Reset() })
+		$("#Simulation_Step").on("click",  () => { ReuploadTexture = true; SimulationObject.Update(IPF) })
+		$("#ResetCamera").on("click",      () => { CameraPosition = { X: 0, Y: 0, Z: 0 }; Stats.Camera.html("0, 0, 0") })
+		$("#SaveImage").on("click",        () => { alert("Not yet implemented") })
 	}
 
 
