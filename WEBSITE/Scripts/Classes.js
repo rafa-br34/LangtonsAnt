@@ -29,25 +29,38 @@ class SimulationState {
 		}
 	}
 
-	Update(Iterations=1) {
+	Update(Iterations = 1) {
 		let GridSize = this.GridSize
 		let Grid = this.Grid
 		let Ants = this.Ants
+
+		let Iterated = 0
 		
 		if (Ants.length == 1) { // Use single step update (faster)
 			let AntObject = Ants[0]
-			for (let i = 0; i < Iterations; i++) {
-				if (!AntObject.Update(Grid, GridSize)) Ants.splice(0, 1)
+			for (; Iterated < Iterations; Iterated++) {
+				if (!AntObject.Update(Grid, GridSize)) {
+					Ants.splice(0, 1)
+					break
+				}
 			}
 		}
 		else { // Use double step update (slower)
-			for (let i = 0; i < Iterations; i++) {
+			for (; Iterated < Iterations; Iterated++) {
 				for (let AntObject of Ants) AntObject.UpdatePosition(Grid, GridSize)
-				for (let i = 0; i < Ants.length; i++) if (!Ants[i].UpdateCell(Grid, GridSize)) Ants.splice(i, 1)
+
+				for (let i = 0; i < Ants.length; i++) {
+					if (!Ants[i].UpdateCell(Grid, GridSize)) {
+						Ants.splice(i, 1)
+						break
+					}
+				}
 			}
 		}
 		
-		this.TotalIterations += Iterations
+		this.TotalIterations += Iterated
+
+		return Iterated
 	}
 
 	ResizeGrid(X, Y) {

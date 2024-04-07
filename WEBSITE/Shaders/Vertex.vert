@@ -22,4 +22,5 @@ void main() {
 		gl_Position = Position * vec4(1.0, RY, 1.0, 1.0);
 
 	s_VertexPosition = (a_VertexPosition.xy + 1.0) / 2.0;
+	s_VertexPosition.x = 1.0 - s_VertexPosition.x;
 }

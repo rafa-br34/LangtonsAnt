@@ -158,11 +158,12 @@ class Ant {
 		let Last = this.LastPosition
 		let Pos = this.Position
 		let Dir = this.Direction
+
+		this.Rotate(this.StateMachine[Grid[GridSize.X * Pos.Y + Pos.X] % this.StateMachine.length])
 		
 		Last.X = Pos.X
 		Last.Y = Pos.Y
 
-		this.Rotate(this.StateMachine[Grid[GridSize.X * Pos.Y + Pos.X] % this.StateMachine.length])
 		Pos.X += Dir.X * this.StepSize
 		Pos.Y += Dir.Y * this.StepSize
 	

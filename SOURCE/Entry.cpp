@@ -103,7 +103,6 @@ int main(int ArgCount, const char* ArgValues[]) {
 }
 */
 
-
 int main(int ArgCount, const char* ArgValues[]) {
 	using enum DirectionEnum;
 	std::vector<DirectionEnum> StateMachine = {
@@ -129,9 +128,9 @@ int main(int ArgCount, const char* ArgValues[]) {
 		
 	};
 
-	std::cout << "State machine: " << StateMachineToString(StateMachine, "") << '\n';
+	//std::cout << "State machine: " << StateMachineToString(StateMachine, "") << '\n';
 
-	Vector2<int> CanvasSize(1000, 1000);//{ 30720, 17280 };
+	Vector2<int> CanvasSize(1920, 1920);//{ 30720, 17280 };
 
 	SimulationState<uint8_t, int> Simulation;
 	EncoderState Encoder;
@@ -147,34 +146,44 @@ int main(int ArgCount, const char* ArgValues[]) {
 	Ants.push_back(Ant<uint8_t>(Center - Vector2(10, 0), Vector2<int8_t>( 1, 0), StateMachine, StateMachineSize));
 	//*/
 	auto Center = CanvasSize / Vector2(2, 2);
-	Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L}, true));
+	//Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L}, true));
 
 	//Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {C,C,C,C,C,C,U,C,C,C,C,C,R45,R,R45,L135,U,C,U,L,L,R135,L45,R45,R,R135,L45,R,R,R45}, true));
 	
-	//Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L,R,R,L,R,R,L,R,R,L,R}, true));
-	//Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L,C}, true));
+	Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, 1), {R,L,R,R,L,R,R,L,R,R,L,R}, true));
+	Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, 1), {R,L,C}, true));
 
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 output.mp4
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 -s 1920x1920 output.mp4
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 -s 1920x1920 -sws_flags neighbor output.mp4
 	// ffmpeg -r 30 -i "Frames/%d.png" -c:v libx264 -preset veryslow -qp 0 -s 7680x4320 output.mp4
+	// ./LangtonsAnt | ~/ffmpeg/ffmpeg -y -f rawvideo -pix_fmt rgba -s 1920x1920 -r 30 -i - -c:v libx264 -preset veryslow output.h264
+	// ./LangtonsAnt | ~/ffmpeg/ffmpeg -y -f rawvideo -pix_fmt rgba -s 1920x1920 -r 30 -i - -c:v libx264 -preset veryslow -s 1920x1920 output.h264
 	// 1ull * 1000000000ull 1b
+	// 1ull * 1000000ull 1m
 
-	size_t Iterations = 1ull * 16000ull;
-	double FrameRate = 1.0; // Video frame rate
-	double Time = 1.0; // Video time
+	size_t Iterations = 1ull * 1000000000ull;
+	double FrameRate = 30.0; // Video frame rate
+	double Time = 240.0; // Video time
 	size_t Frames = size_t(Time * FrameRate);
 	
 	size_t CaptureDelta = size_t(double(Iterations) / double(Frames));
 
+	size_t FrameSize = (size_t)CanvasSize.X * (size_t)CanvasSize.Y;
+	uint32_t* FrameBuffer = new uint32_t[FrameSize];
+
 	Simulation.Reset();
-	Encoder.Threads = 2;
+	Encoder.Threads = 75;
 	for (size_t i = 0; i < Frames; i++) {
-		std::cout << i << ' ' << Simulation.Simulate(CaptureDelta) << '/' << CaptureDelta << '\n';
+		Simulation.Simulate(CaptureDelta);//std::cout << "i:" << i << ' ' << Simulation.Simulate(CaptureDelta) << '/' << CaptureDelta << '\n';
 		
-		//Encoder.EncodeSync(Simulation, std::string("Frames/") + std::to_string(i) +".png");
-		Encoder.EncodeAsync(Simulation, std::string("State_") + std::to_string(i) +".png");
+		for (size_t p = 0; p < FrameSize; p++) {
+			FrameBuffer[p] = Encoder.GetColor(Simulation.CanvasPointer[p]) & 0x00FFFFFF;
+		}
+		fwrite(FrameBuffer, 1, FrameSize * sizeof(uint32_t), stdout);
+		//Encoder.EncodeAsync(Simulation, std::string("Frames/") + std::to_string(i) +".png");
 	}
 	
+	delete[] FrameBuffer;
 	Encoder.WaitJobs();
 }

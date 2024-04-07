@@ -103,7 +103,7 @@ public:
 
 		CellType* Cell = Grid + FLATTEN_2D(Pos.X, Pos.Y, GridSize.X);
 		
-		Rotate((int8_t)StateMachine[*Cell]);
+		Rotate((int8_t)StateMachine[*Cell % StateMachine.size()]);
 		Pos += Dir * StepSize;
 
 		*Cell = (*Cell + 1) % StateMachine.size();
@@ -118,8 +118,7 @@ public:
 		auto& Dir  = Direction;
 		auto& Pos  = Position;
 		
-		Rotate((int8_t)StateMachine[Grid[FLATTEN_2D(Pos.X, Pos.Y, GridSize.X)]]);
-
+		Rotate((int8_t)StateMachine[Grid[FLATTEN_2D(Pos.X, Pos.Y, GridSize.X)] % StateMachine.size()]);
 		Last = Pos;
 		Pos += Dir * StepSize;
 

@@ -23,7 +23,6 @@ typedef uint32_t(* ColorDescriptor)(size_t);
 class EncoderState {
 private:
 	std::vector<uint32_t> m_PaletteCache = {};
-	size_t m_PaletteSize = 0; // @todo Improve palette generation (add caching)
 
 	std::atomic<size_t> m_ThreadsActive = 0; // @todo std::atomic might not be required
 	std::condition_variable m_ThreadsSignal = {};
@@ -55,7 +54,7 @@ private:
 
 		size_t CacheSize = m_PaletteCache.size();
 		if (StateCount <= CacheSize) {
-			if (m_PaletteCache.size() - CacheSize > CacheSize / 2)
+			if (CacheSize - StateCount > CacheSize * 2)
 				m_PaletteCache.resize(StateCount);
 			
 			return;
@@ -123,6 +122,12 @@ public:
 	ColorDescriptor Coloring = [](size_t Index) -> uint32_t { auto I = uint32_t(Index); XOR_SHIFT32(I); return I * 0x9E3779B9; };
 	size_t Threads = 1;
 
+	INLINE uint32_t GetColor(size_t Index) {
+		if (Index + 1 > m_PaletteCache.size())
+			m_UpdatePaletteCache(Index + 1);
+
+		return m_PaletteCache[Index];
+	}
 
 	template<typename CellType, typename SizeType>
 	unsigned int EncodeSync(const SimulationState<CellType, SizeType>& State, std::string Path) {

@@ -38,7 +38,7 @@ Example:
 `-a P(500,500)D(0,-1)M(RL)`: Creates a single ant with the state machine `RL`  
 `-a P(500,500)D(0,-1)M(0)S(10)F(W);P(500,500)D(0,1)M(1)`: Creates two ants using state machine 0 and 1, ant 0 wraps and has a step size of 10  
 #### `-i`:
-Defines how many iterations should be evaluated, by default it will run until all ants run out of bounds or (if wrap is enabled) will run indefinitely. Alternatively it can be specified as time to signal that it should run based on time instead of iterations.  
+Defines how many iterations should be evaluated, by default it will run until all ants run out of bounds or (if wrap is enabled) will run indefinitely. Alternatively `t` can be added before the number to make it time based.  
 Example:  
 `-i i50b`: Run for 50 billion iterations  
 `-i t100s`: Run a maximum of 100 seconds  
@@ -47,7 +47,13 @@ Defines when a canvas snapshot should be taken. Can be chained using `;`
 - `i<interval?>`: Snapshots every `interval` iterations (if not specified 1 is assumed)
 - `f`: Snapshots the final state
 #### `-o`:
-For now `-o` just defines which folder to output the images, in the near future proper arguments and output formatting will be added.
-
+Defines how to output images.  
+- `f:<format>:<name>`: Write image files. `%d` can be used for the image index and `%i` for the current iteration.
+- `s:<format>:<stdout|stderr|stream>:<stream_name?>`: Write images to a pipe/stream.
+Supported formats:  
+- `idx`/`u8`: Outputs the raw buffer.
+- `rgb24`: Outputs the raw buffer as RGB24.
+- `png`: Outputs the raw buffer as PNG.
+- `idx-gzip`/`u8-gzip`: Outputs a compressed version of the buffer.
 #### `-t`:
 Defines how many threads should be used, for now this argument only changes the amount of threads used when encoding images, *eventually* multithreading for the ants will also be added.

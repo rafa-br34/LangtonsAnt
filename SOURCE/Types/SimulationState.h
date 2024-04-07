@@ -99,5 +99,5 @@ public:
 	SimulationState() = default;
 	SimulationState(const Vector2<SizeType>& Size) { Resize(Size); }
 
-	~SimulationState() { m_Deallocate(); }
+	virtual ~SimulationState() { m_Deallocate(); }
 };
