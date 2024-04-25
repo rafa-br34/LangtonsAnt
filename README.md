@@ -1,13 +1,24 @@
+![Langton's ant originally on a 30720x17280 grid (resized to 4320x4320) with the LRRRRRLLR pattern after 1292334158 iterations](ASSETS/LRRRRRLLR_30720x17280_1292334158_RESIZED_512x512.png)
+
 This repository contains a C++ and web implementation of the [Langton's ant](https://wikipedia.org/wiki/Langton's_ant) universal Turing machine.
 
 The web version can be found [here](https://rafa-br34.github.io/LangtonsAnt)
 
-  
+## Table of contents
+* [Implementation notes](#implementation-notes)
+* [Usage](#usage)
+  * [Web version](#web-version)
+  * [C++ version](#c-version)
+    * [Arguments](#arguments)
+      * [`x` & `y`](#x---y)
+      * [`m`](#m)
+      * [`a`](#a)
+      * [`i`](#i)
+      * [`s`](#s)
+      * [`o`](#o)
+      * [`t`](#t)
 
-![Langton's ant originally on a 30720x17280 grid (resized to 4320x4320) with the LRRRRRLLR pattern after 1292334158 iterations](ASSETS/LRRRRRLLR_30720x17280_1292334158_RESIZED.png)
-
-# Usage
-## Implementation notes
+# Implementation notes
 Both the C++ ([Ant.h](https://github.com/rafa-br34/LangtonsAnt/blob/master/SOURCE/Types/Ant.h)) and JavaScript ([Ant.js](https://github.com/rafa-br34/LangtonsAnt/blob/master/WEBSITE/Scripts/Ant.js)) version share the same implementation concept.
 There's support for 8 possible operations, which are:
 - R45/L45
@@ -15,14 +26,15 @@ There's support for 8 possible operations, which are:
 - R135/L135
 - C (continue)
 - U (180 degree turn)
-## Web
+# Usage
+## Web version
 Placeholder
 
-## C++
+## C++ version
 ### Arguments:
 #### `-x` & `-y`:
 Canvas width/height
-### `-m`: 
+#### `-m`: 
 Defines a state machine, can later be used when defining a ant with `-a`.  Can be chained using `;`  
 Example:  
 `-m LRRRRRLLR;RLLLLLRRL`: Creates two state machines with index 0 and 1
@@ -51,9 +63,8 @@ Defines how to output images.
 - `f:<format>:<name>`: Write image files. `%d` can be used for the image index and `%i` for the current iteration.
 - `s:<format>:<stdout|stderr|stream>:<stream_name?>`: Write images to a pipe/stream.
 Supported formats:  
-- `idx`/`u8`: Outputs the raw buffer.
+- `idx`: Outputs the raw buffer.
 - `rgb24`: Outputs the raw buffer as RGB24.
 - `png`: Outputs the raw buffer as PNG.
-- `idx-gzip`/`u8-gzip`: Outputs a compressed version of the buffer.
 #### `-t`:
 Defines how many threads should be used, for now this argument only changes the amount of threads used when encoding images, *eventually* multithreading for the ants will also be added.

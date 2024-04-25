@@ -367,6 +367,9 @@ async function Main() {
 		$("#Simulation_Step").on("click",  () => { ReuploadTexture = true; SimulationObject.Update(IPF) })
 		$("#ResetCamera").on("click",      () => { CameraPosition = { X: 0, Y: 0, Z: 0 }; Stats.Camera.html("0, 0, 0") })
 		$("#SaveImage").on("click",        () => { alert("Not yet implemented") })
+		
+		// Others
+		$("#GitHubLink").on("click", () => { window.open("https://github.com/rafa-br34/LangtonsAnt", "_blank") })
 	}
 
 

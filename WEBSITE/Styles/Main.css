@@ -125,18 +125,20 @@ canvas {
 	text-align: center;
 	background: rgba(0.1, 0.1, 0.1, 0.4);
 	border-bottom: outset 1px;
-	margin-bottom: 2px;
 	border-top: var(--Text) 1px solid;
+	margin-bottom: 0px;
 	margin-top: -1px;
 
 	&.Spaced {
-		margin-top: 8px;
+		margin-top: 0px;
 	}
 }
 
 .SettingsPanel .Entry {
 	display: flex;
 	margin-top: 1px;
+	min-height: 21px;
+	margin-bottom: 1px;
 }
 
 .SettingsPanel .Entry .Name {
@@ -165,7 +167,8 @@ canvas {
 .List {
 	border: var(--ForegroundActive) 1px solid;
 	width: 100%;
-	height: fit-content;
+	max-height: calc(8 * 21px);
+	min-height: calc(8 * 21px);
 	overflow-y: auto;
 }
 

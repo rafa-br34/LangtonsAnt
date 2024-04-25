@@ -58,6 +58,7 @@
 		<div id="ManagerContainer">
 			<!-- Simulation settings -->
 			<div class="SettingsPanel" style="width: 50%; height: calc(100vh - 2px);">
+
 				<div class="Title">Grid Options</div>
 				<div class="Entry">
 					<div class="Name">Size: </div>
@@ -72,6 +73,7 @@
 						<input id="Iterations" type="number" min="0" step="1" max="100000000" value="10" style="width: 100%;">
 					</span>
 				</div>
+
 				<div class="Title Spaced">Simulation Options</div>
 				<div class="Entry">
 					<span class="Value">
@@ -90,6 +92,7 @@
 						<button id="ResetCamera">Reset Camera</button>
 					</span>
 				</div>
+
 				<div class="Title Spaced">Stats</div>
 				<div class="Entry">
 					<div class="Name">Live Ants: </div>
@@ -127,8 +130,19 @@
 						<div id="Stats_Bandwidth">0</div>
 					</span>
 				</div>
+
+				<div class="Title Spaced">Others</div>
+				<div class="Entry">
+					<span class="Value" id="GitHubLink">
+						<button style="display: inline; background: #eee; border-color: var(--Text); color: var(--Background); cursor: pointer;">
+							<img src="https://github.com/favicon.ico" style="float: left; max-height: 19px; padding: 0px; margin-left: -4px; margin-right: -100%; margin-top: -1px; margin-bottom: -1px;">
+							GitHub Repository
+						</button>
+					</span>
+				</div>
 			</div>
 			<div class="SettingsPanel" style="width: 50%; height: calc(100vh - 2px); border-left: 0px; padding-left: 1px; margin-right: 1px;">
+				
 				<div class="Title">Ant Settings</div>
 				<div class="Entry">
 					<div class="Name">Position: </div>
@@ -168,6 +182,7 @@
 						<input id="Ant_Enabled" type="checkbox" value="true">
 					</span>
 				</div>
+
 				<div class="Title Spaced">Ant List</div>
 				<div class="Entry">
 					<span class="Value">
@@ -176,9 +191,9 @@
 						<button id="CloneAnt">Clone</button>
 					</span>
 				</div>
-				<div class="Entry" style="max-height: calc(80vh - 4px);">
+				<div class="Entry">
 					<span class="Value">
-						<div id="AntList" class="List" style="max-height: 100%;">
+						<div id="AntList" class="List">
 						</div>
 					</span>
 				</div>

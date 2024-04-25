@@ -6,6 +6,7 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <mutex>
 #include <map>
 
 #include <array>
@@ -13,10 +14,11 @@
 #include <argparse/argparse.hpp>
 
 #include "ConfigParser.h"
+#include "Encoding.h"
 #include "Common.h"
 
+
 #include "Types/SimulationState.h"
-#include "Types/EncoderState.h"
 #include "Types/Vector.h"
 #include "Types/Ant.h"
 
@@ -103,6 +105,7 @@ int main(int ArgCount, const char* ArgValues[]) {
 }
 */
 
+
 int main(int ArgCount, const char* ArgValues[]) {
 	using enum DirectionEnum;
 	std::vector<DirectionEnum> StateMachine = {
@@ -130,10 +133,13 @@ int main(int ArgCount, const char* ArgValues[]) {
 
 	//std::cout << "State machine: " << StateMachineToString(StateMachine, "") << '\n';
 
-	Vector2<int> CanvasSize(1920, 1920);//{ 30720, 17280 };
+	Vector2<int> CanvasSize(30720, 30720);//{ 30720, 17280 };
 
-	SimulationState<uint8_t, int> Simulation;
-	EncoderState Encoder;
+	SimulationState<uint8_t, int> Simulation = {};
+	Encoding::PaletteManager Palette = {};
+	Encoding::ThreadManager Threads = {};
+
+	Threads.ThreadCount = 50;
 	
 	Simulation.Resize(CanvasSize);
 	
@@ -157,33 +163,72 @@ int main(int ArgCount, const char* ArgValues[]) {
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 -s 1920x1920 output.mp4
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 -s 1920x1920 -sws_flags neighbor output.mp4
 	// ffmpeg -r 30 -i "Frames/%d.png" -c:v libx264 -preset veryslow -qp 0 -s 7680x4320 output.mp4
-	// ./LangtonsAnt | ~/ffmpeg/ffmpeg -y -f rawvideo -pix_fmt rgba -s 1920x1920 -r 30 -i - -c:v libx264 -preset veryslow output.h264
-	// ./LangtonsAnt | ~/ffmpeg/ffmpeg -y -f rawvideo -pix_fmt rgba -s 1920x1920 -r 30 -i - -c:v libx264 -preset veryslow -s 1920x1920 output.h264
+	// ./LangtonsAnt | ~/ffmpeg/ffmpeg -y -f rawvideo -pix_fmt rgb24 -s 30720x30720 -r 30 -i - -c:v libx264 -preset veryslow -s 7680x7680 output.h264
+	// ./LangtonsAnt | ~/ffmpeg/ffmpeg -y -f rawvideo -pix_fmt rgb24 -s 1920x1920 -r 30 -i - -c:v libx264 -preset veryslow -s 1920x1920 output.h264
+	
 	// 1ull * 1000000000ull 1b
 	// 1ull * 1000000ull 1m
 
-	size_t Iterations = 1ull * 1000000000ull;
+	size_t Iterations = 3ull * 1000000000ull;
 	double FrameRate = 30.0; // Video frame rate
 	double Time = 240.0; // Video time
 	size_t Frames = size_t(Time * FrameRate);
 	
 	size_t CaptureDelta = size_t(double(Iterations) / double(Frames));
 
-	size_t FrameSize = (size_t)CanvasSize.X * (size_t)CanvasSize.Y;
-	uint32_t* FrameBuffer = new uint32_t[FrameSize];
-
 	Simulation.Reset();
-	Encoder.Threads = 75;
+	Palette.ResizePalette(Simulation.PossibleStates);
+
+	std::mutex Mutex = {};
+	size_t CurrentFrame = 0;
+
 	for (size_t i = 0; i < Frames; i++) {
 		Simulation.Simulate(CaptureDelta);//std::cout << "i:" << i << ' ' << Simulation.Simulate(CaptureDelta) << '/' << CaptureDelta << '\n';
 		
-		for (size_t p = 0; p < FrameSize; p++) {
-			FrameBuffer[p] = Encoder.GetColor(Simulation.CanvasPointer[p]) & 0x00FFFFFF;
-		}
-		fwrite(FrameBuffer, 1, FrameSize * sizeof(uint32_t), stdout);
+		auto GridCopy = std::make_shared<std::vector<uint8_t>>();
+		
+		GridCopy->assign(Simulation.CanvasPointer, Simulation.CanvasPointer + CanvasSize.X * CanvasSize.Y);
+
+		Threads.AcquireThread();
+		std::thread([&, GridCopy, i]() {
+			uint8_t* Canvas = GridCopy->data();
+
+			uint8_t* Image = new uint8_t[Center.X * Center.Y * 3];
+
+			auto Start = std::chrono::high_resolution_clock::now();
+			for (int X = 0; X < Center.X; X++) {
+				for (int Y = 0; Y < Center.Y; Y++) {
+					//*
+					auto C00 = Palette[Canvas[FLATTEN_2D(X * 2 + 0, Y * 2 + 0, CanvasSize.X)]].RGBA;
+					auto C01 = Palette[Canvas[FLATTEN_2D(X * 2 + 0, Y * 2 + 1, CanvasSize.X)]].RGBA;
+					auto C10 = Palette[Canvas[FLATTEN_2D(X * 2 + 1, Y * 2 + 0, CanvasSize.X)]].RGBA;
+					auto C11 = Palette[Canvas[FLATTEN_2D(X * 2 + 1, Y * 2 + 1, CanvasSize.X)]].RGBA;
+
+					size_t Index = FLATTEN_2D(X, Y, Center.X) * 3;
+
+					Image[Index + 0] = uint8_t(((float)C00.R + (float)C01.R + (float)C10.R + (float)C11.R) / 4.f);
+					Image[Index + 1] = uint8_t(((float)C00.G + (float)C01.G + (float)C10.G + (float)C11.G) / 4.f);
+					Image[Index + 2] = uint8_t(((float)C00.B + (float)C01.B + (float)C10.B + (float)C11.B) / 4.f);
+					//*/
+				}
+			}
+			auto Elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - Start);
+
+			while (CurrentFrame != i)
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+			Mutex.lock();
+			std::cerr << "Frame " << CurrentFrame << " Took " << Elapsed << " seconds\n";
+			fwrite(Image, 1, Center.X * Center.Y * 3, stdout);
+			CurrentFrame++;
+			Mutex.unlock();
+			
+			delete[] Image;
+
+			Threads.ReleaseThread();
+		}).detach();
+		
+		
 		//Encoder.EncodeAsync(Simulation, std::string("Frames/") + std::to_string(i) +".png");
 	}
-	
-	delete[] FrameBuffer;
-	Encoder.WaitJobs();
 }
