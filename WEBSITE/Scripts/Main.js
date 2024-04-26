@@ -166,7 +166,11 @@ async function Main() {
 		let Ant_Position = { X: $("#Ant_PositionX"), Y: $("#Ant_PositionY") }
 		let Ant_Direction = { X: $("#Ant_DirectionX"), Y: $("#Ant_DirectionY") }
 		let Ant_StepSize = $("#Ant_StepSize")
+		
 		let Ant_Rules = $("#Ant_Rules")
+		let Ant_Rules_Mutate = $("#Ant_Rules_Mutate")
+		let Ant_Rules_Randomize = $("#Ant_Rules_Randomize")
+
 		let Ant_Wrap = $("#Ant_Wrap")
 		let Ant_Enabled = $("#Ant_Enabled")
 		
@@ -229,7 +233,6 @@ async function Main() {
 			SimulationObject.Reset()
 		})
 
-
 		Ant_Rules.on("change", () => {
 			if (!Selected) { return }
 
@@ -243,6 +246,28 @@ async function Main() {
 				Ant_Rules.css("background-color", "rgba(0, 255, 0, 0.2)")
 				AntObject.StateMachine = StateMachine
 			}
+			
+			SimulationObject.Reset()
+			UpdateOptions()
+		})
+
+		Ant_Rules_Mutate.on("click", () => {
+			if (!Selected) { return }
+			
+			let States = Object.values(c_DirectionEnum)
+			let StateMachine = AntObject.StateMachine
+			
+			StateMachine[Math.floor(Math.random() * StateMachine.length)] = States[Math.floor(Math.random() * States.length)]
+			SimulationObject.Reset()
+			UpdateOptions()
+		})
+
+		Ant_Rules_Randomize.on("click", () => {
+			if (!Selected) { return }
+			
+			let States = Object.values(c_DirectionEnum)
+			
+			AntObject.StateMachine = Array.from({length: (Math.random() * 10) + 4}, () => States[Math.floor(Math.random() * States.length)])
 			
 			SimulationObject.Reset()
 			UpdateOptions()
@@ -290,7 +315,7 @@ async function Main() {
 			let NewAnt = new Ant(
 				GridSize.X / 2, GridSize.Y / 2,
 				0, -1,
-				Array.from({length: (Math.random() * 22) + 6}, () => States[Math.floor(Math.random() * States.length)])
+				Array.from({length: (Math.random() * 10) + 4}, () => States[Math.floor(Math.random() * States.length)])
 			)
 
 			AddAnt(NewAnt, !Selected)
