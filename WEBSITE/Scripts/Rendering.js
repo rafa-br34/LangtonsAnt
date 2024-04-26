@@ -188,12 +188,12 @@ function DrawFrame(Shader, GL, UploadTexture, Size, Data, CameraPosition) {
 		GL.texImage2D(
 			GL.TEXTURE_2D,
 			0,
-			GL.R16UI,
+			GL.R8UI, // R8UI, R16UI
 			Size.X,
 			Size.Y,
 			0,
 			GL.RED_INTEGER,
-			GL.UNSIGNED_SHORT,
+			GL.UNSIGNED_BYTE, // UNSIGNED_BYTE, UNSIGNED_SHORT
 			Data,
 		)
 	}

@@ -69,7 +69,7 @@ class SimulationState {
 		GridSize.X = X
 		GridSize.Y = Y
 
-		return this.Grid = new Uint16Array(GridSize.X * GridSize.Y).fill(0)
+		return this.Grid = new Uint8Array(GridSize.X * GridSize.Y).fill(0) // Uint8Array, Uint16Array
 	}
 }
 
