@@ -138,6 +138,7 @@ int main(int ArgCount, const char* ArgValues[]) {
 	SimulationState<uint8_t, int> Simulation = {};
 	Encoding::PaletteManager Palette = {};
 	Encoding::ThreadManager Threads = {};
+	Encoding::EncoderState Encoder = {};
 
 	Threads.ThreadCount = 50;
 	
@@ -169,15 +170,17 @@ int main(int ArgCount, const char* ArgValues[]) {
 	// 1ull * 1000000000ull 1b
 	// 1ull * 1000000ull 1m
 
-	size_t Iterations = 3ull * 1000000000ull;
-	double FrameRate = 30.0; // Video frame rate
-	double Time = 240.0; // Video time
+	size_t Iterations = 2ull * 1000000000ull;
+	double FrameRate = 3.0; // Video frame rate
+	double Time = 1.0; // Video time
 	size_t Frames = size_t(Time * FrameRate);
 	
 	size_t CaptureDelta = size_t(double(Iterations) / double(Frames));
 
 	Simulation.Reset();
 	Palette.ResizePalette(Simulation.PossibleStates);
+	Encoder.Threads.ThreadCount = 2;
+	Encoder.Format = Encoding::ImageFormat::PNG_GRAYSCALE;
 
 	std::mutex Mutex = {};
 	size_t CurrentFrame = 0;
@@ -185,6 +188,7 @@ int main(int ArgCount, const char* ArgValues[]) {
 	for (size_t i = 0; i < Frames; i++) {
 		Simulation.Simulate(CaptureDelta);//std::cout << "i:" << i << ' ' << Simulation.Simulate(CaptureDelta) << '/' << CaptureDelta << '\n';
 		
+		/*
 		auto GridCopy = std::make_shared<std::vector<uint8_t>>();
 		
 		GridCopy->assign(Simulation.CanvasPointer, Simulation.CanvasPointer + CanvasSize.X * CanvasSize.Y);
@@ -198,7 +202,7 @@ int main(int ArgCount, const char* ArgValues[]) {
 			auto Start = std::chrono::high_resolution_clock::now();
 			for (int X = 0; X < Center.X; X++) {
 				for (int Y = 0; Y < Center.Y; Y++) {
-					//*
+					//
 					auto C00 = Palette[Canvas[FLATTEN_2D(X * 2 + 0, Y * 2 + 0, CanvasSize.X)]].RGBA;
 					auto C01 = Palette[Canvas[FLATTEN_2D(X * 2 + 0, Y * 2 + 1, CanvasSize.X)]].RGBA;
 					auto C10 = Palette[Canvas[FLATTEN_2D(X * 2 + 1, Y * 2 + 0, CanvasSize.X)]].RGBA;
@@ -209,7 +213,7 @@ int main(int ArgCount, const char* ArgValues[]) {
 					Image[Index + 0] = uint8_t(((float)C00.R + (float)C01.R + (float)C10.R + (float)C11.R) / 4.f);
 					Image[Index + 1] = uint8_t(((float)C00.G + (float)C01.G + (float)C10.G + (float)C11.G) / 4.f);
 					Image[Index + 2] = uint8_t(((float)C00.B + (float)C01.B + (float)C10.B + (float)C11.B) / 4.f);
-					//*/
+					///
 				}
 			}
 			auto Elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - Start);
@@ -227,8 +231,10 @@ int main(int ArgCount, const char* ArgValues[]) {
 
 			Threads.ReleaseThread();
 		}).detach();
+		*/
 		
-		
-		//Encoder.EncodeAsync(Simulation, std::string("Frames/") + std::to_string(i) +".png");
+		Encoder.EncodeAsync(Simulation, [&, i](const std::vector<uint8_t>& ImageData, const Vector2<int>&, unsigned int) {
+			lodepng::save_file(ImageData, "Frames/" + std::to_string(i) + ".png");
+		});
 	}
 }

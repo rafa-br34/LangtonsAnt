@@ -29,7 +29,6 @@ namespace Encoding {
 	};
 
 	typedef RGBA32(* ColorDescriptor)(size_t);
-	typedef void(* EncoderCallback)(const uint8_t*, size_t, const Vector2<int>&, unsigned int);
 
 	class PaletteManager {
 	private:
@@ -120,13 +119,9 @@ namespace Encoding {
 		~ThreadManager() { WaitJobs(); }
 	};
 
-	enum class PNGFormat : uint8_t {
+	enum class ImageFormat : uint8_t {
 		PNG_PALETTE,
 		PNG_GRAYSCALE,
-		_PNG_END,
-
-		RAW_U8,
-		_RAW_END
 	};
 
 	class EncoderState {
@@ -139,8 +134,8 @@ namespace Encoding {
 			LodePNGColorType ColorType;
 			
 			switch (Format) {
-				case DataFormat::PNG_PALETTE:   ColorType = LCT_PALETTE; break;
-				case DataFormat::PNG_GRAYSCALE: ColorType = LCT_GREY; break;
+				case ImageFormat::PNG_PALETTE:   ColorType = LCT_PALETTE; break;
+				case ImageFormat::PNG_GRAYSCALE: ColorType = LCT_GREY; break;
 
 				default: {
 					DEBUG_PRINT("Unknown data format %d, ColorType will be set to LCT_GREY\n", (int)Format);
@@ -157,7 +152,7 @@ namespace Encoding {
 			
 			State.encoder.auto_convert = 0;
 
-			if (Format != DataFormat::PNG_PALETTE) return State;
+			if (Format != ImageFormat::PNG_PALETTE) return State;
 
 			// DEBUG_PRINT("Setting up palette with %d colors (%d bits per pixel):\n", (int)StateCount, (int)BitDepth);
 			Palette.ResizePalette(StateCount);
@@ -175,19 +170,14 @@ namespace Encoding {
 
 		template<typename Function, typename CellType, typename SizeType>
 		void m_EncodeBuffer(const CellType* Grid, const Vector2<SizeType>& Size, size_t StateCount, Function Callback) {
-			if (DataFormat::_PNG_END > Format) {
-				std::vector<uint8_t> Buffer = {};
-				lodepng::State State = m_SetupEncoderState(StateCount, 8);
-				
-				unsigned int Result = lodepng::encode(Buffer, (const unsigned char*)Grid, (unsigned int)Size.X, (unsigned int)Size.Y, State);
+			std::vector<uint8_t> ImageData = {};
+			lodepng::State State = m_SetupEncoderState(StateCount, 8);
+			
+			unsigned int Result = lodepng::encode(ImageData, (const unsigned char*)Grid, (unsigned int)Size.X, (unsigned int)Size.Y, State);
 
-				ASSERT_MSG(Result == 0, "lodepng::encode -> %d\n", Result);
+			ASSERT_MSG(Result == 0, "lodepng::encode -> %d\n", Result);
 
-				Callback(Buffer.data(), Buffer.size(), Vector2<int>(Size.X, Size.Y), Result);
-			}
-			else if (DataFormat::_RAW_END > Format) {
-				Callback(Grid, (size_t)Size.X * (size_t)Size.Y, Vector2<int>(Size.X, Size.Y), 0);
-			}
+			Callback(ImageData, Vector2<int>(Size.X, Size.Y), Result);
 		}
 
 
@@ -195,14 +185,14 @@ namespace Encoding {
 		PaletteManager Palette = {};
 		ThreadManager  Threads = {};
 		
-		DataFormat Format = DataFormat::PNG_PALETTE;
+		ImageFormat Format = ImageFormat::PNG_PALETTE;
 
-		template<typename Function=EncoderCallback, typename CellType, typename SizeType>
+		template<typename Function, typename CellType, typename SizeType>
 		void EncodeSync(const SimulationState<CellType, SizeType>& State, Function Callback) {
 			m_EncodeBuffer(State.CanvasPointer, State.CanvasSize, State.PossibleStates, Callback);
 		}
 
-		template<typename Function=EncoderCallback, typename CellType, typename SizeType>
+		template<typename Function, typename CellType, typename SizeType>
 		void EncodeSync(const SimulationState<CellType, SizeType>& State, const Vector2<SizeType>& SectionPosition, const Vector2<SizeType>& SectionSize, Function Callback) {
 			std::vector<CellType> Section(SectionSize.X * SectionSize.Y);
 
@@ -219,7 +209,7 @@ namespace Encoding {
 			return m_EncodeBuffer(Section.data(), SectionSize, State.PossibleStates, Callback);
 		}
 
-		template<typename Function=EncoderCallback, typename CellType, typename SizeType>
+		template<typename Function, typename CellType, typename SizeType>
 		void EncodeAsync(const SimulationState<CellType, SizeType>& State, Function Callback) {
 			auto GridCopy = std::make_shared<std::vector<CellType>>();
 			auto GridSize = State.CanvasSize;
@@ -233,7 +223,7 @@ namespace Encoding {
 			}).detach();
 		}
 
-		template<typename Function=EncoderCallback, typename CellType, typename SizeType>
+		template<typename Function, typename CellType, typename SizeType>
 		void EncodeAsync(const SimulationState<CellType, SizeType>& State, const Vector2<SizeType>& SectionPosition, const Vector2<SizeType>& SectionSize, Function Callback) {
 			auto Section = std::make_shared<std::vector<CellType>>(SectionSize.X * SectionSize.Y);
 
