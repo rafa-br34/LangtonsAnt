@@ -10,7 +10,9 @@
 #include "Types/Ant.h"
 
 // @todo A ParserState class could be a good idea
-namespace ConfigParser {
+namespace Configs {
+	union EvaluationTime
+
 	enum class ParserStatus : uint8_t {
 		OK = 0,
 		NO_MATCHES,
@@ -38,7 +40,8 @@ namespace ConfigParser {
 				}
 
 				// If skip is 0 then we didn't find anything, so presume R90/L90
-				if (Skip == 0) Result.push_back(DirectionEnum(2 * ParseDirection));
+				if (Skip == 0)
+					Result.push_back(DirectionEnum(2 * ParseDirection));
 
 				ParseDirection = 0; // Stop parsing direction
 			}
@@ -60,8 +63,9 @@ namespace ConfigParser {
 			}
 		}
 
-		if (ParseDirection != 0) Result.push_back(DirectionEnum(2 * ParseDirection));
-
+		if (ParseDirection != 0)
+			Result.push_back(DirectionEnum(2 * ParseDirection));
+		
 		return Result;
 	}
 

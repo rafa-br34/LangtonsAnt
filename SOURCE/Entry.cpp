@@ -13,17 +13,16 @@
 
 #include <argparse/argparse.hpp>
 
-#include "ConfigParser.h"
 #include "Encoding.h"
+#include "Configs.h"
 #include "Common.h"
-
 
 #include "Types/SimulationState.h"
 #include "Types/Vector.h"
 #include "Types/Ant.h"
 
 
-/* @todo argument parser yay
+//* @todo argument parser yay
 template<typename Type, typename SizeType=size_t>
 void BuildPossibilityList(std::vector<std::vector<Type>>& List, SizeType Size, Type* Dictionary, SizeType DictionarySize) {
 	Type* Current = new Type[Size];
@@ -50,7 +49,8 @@ void BuildPossibilityList(std::vector<std::vector<Type>>& List, SizeType Size, T
 }
 
 
-void ParseArguments(int Count, const char* Values[], State<>& GlobalState) {
+template<typename CellType, typename SizeType>
+void ParseArguments(int Count, const char* Values[], SimulationState<CellType, SizeType>& Simulation) {
 	argparse::ArgumentParser Program("Langton's ant");
 
 	Program.add_description("Efficient modular implementation of Langton's ant universal Turing machine which supports R45/L45, R90/L90, R135/L135, U(U turn), and C(Continue)");
@@ -76,7 +76,6 @@ void ParseArguments(int Count, const char* Values[], State<>& GlobalState) {
 		.default_value("i5000")
 		.help("Defines how many iterations should be evaluated, i50b runs for 50b iterations, t50 runs for 50 seconds.");
 
-
 	try {
 		Program.parse_args(Count, Values);
 	}
@@ -86,26 +85,35 @@ void ParseArguments(int Count, const char* Values[], State<>& GlobalState) {
 		std::exit(1);
 	}
 
-	GlobalState.CanvasSize.X = Program.get<int>("-x");
-	GlobalState.CanvasSize.Y = Program.get<int>("-y");
+	Simulation.Resize(
+		Program.get<SizeType>("-x"),
+		Program.get<SizeType>("-y")
+	);
 	
 	std::vector<std::vector<DirectionEnum>> StateMachines = {};
 
-	ConfigParser::ParseStateMachines(Program.get<std::string>("-m"), StateMachines);
-	ConfigParser::ParseAnts(Program.get<std::string>("-a"), StateMachines, GlobalState.TemplateAnts);
+	ConfigParser::ParseStateMachines(
+		Program.get<std::string>("-m"),
+		StateMachines
+	);
+	ConfigParser::ParseAnts(
+		Program.get<std::string>("-a"),
+		StateMachines,
+		Simulation.TemplateAnts
+	);
 
-	GlobalState.Reset();
+	Simulation.Reset();
 }
 
 int main(int ArgCount, const char* ArgValues[]) {
-	State GlobalState;
+	SimulationState<uint8_t, int> Simulation = {};
 
-	ParseArguments(ArgCount, ArgValues, GlobalState);
-
+	ParseArguments(ArgCount, ArgValues, Simulation);
+	
 }
-*/
+//*/
 
-
+/*
 int main(int ArgCount, const char* ArgValues[]) {
 	using enum DirectionEnum;
 	std::vector<DirectionEnum> StateMachine = {
@@ -151,7 +159,7 @@ int main(int ArgCount, const char* ArgValues[]) {
 
 	Ants.push_back(Ant<uint8_t>(Center + Vector2(10, 0), Vector2<int8_t>(-1, 0), StateMachine, StateMachineSize));
 	Ants.push_back(Ant<uint8_t>(Center - Vector2(10, 0), Vector2<int8_t>( 1, 0), StateMachine, StateMachineSize));
-	//*/
+	///
 	auto Center = CanvasSize / Vector2(2, 2);
 	//Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L}, true));
 
@@ -231,10 +239,11 @@ int main(int ArgCount, const char* ArgValues[]) {
 
 			Threads.ReleaseThread();
 		}).detach();
-		*/
+		/
 		
 		Encoder.EncodeAsync(Simulation, [&, i](const std::vector<uint8_t>& ImageData, const Vector2<int>&, unsigned int) {
 			lodepng::save_file(ImageData, "Frames/" + std::to_string(i) + ".png");
 		});
 	}
 }
+*/

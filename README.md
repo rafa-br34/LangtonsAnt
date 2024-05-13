@@ -65,7 +65,7 @@ Defines when a canvas snapshot should be taken. Can be chained using `;`
 #### `-o`:
 Defines how to output images.  
 - `f:<format>:<name>`: Write image files. `%d` can be used for the image index and `%i` for the current iteration.
-- `s:<format>:<stdout|stderr|stream>:<stream_name?>`: Write images to a pipe/stream.
+- `s:<format>:<stdout|stream>:<stream_name?>`: Write images to a pipe/stream.  
 Supported formats:  
 - `idx`: Outputs the raw buffer.
 - `rgb24`: Outputs the raw buffer as RGB24.
