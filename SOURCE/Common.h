@@ -1,7 +1,8 @@
 #pragma once
+#include <stdint.h>
 
-#define CELL_TYPE uint8_t
-#define SIZE_TYPE int
+using CellType = uint8_t;
+using SizeType = int;
 
 #define FLATTEN_2D(X, Y, Width) ((Width) * (Y) + (X))
 #define XOR_SHIFT32(S) S ^= (S << 13); S ^= (S >> 17); S ^= (S << 5);

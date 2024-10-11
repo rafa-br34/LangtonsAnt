@@ -17,8 +17,8 @@ set(CMAKE_GENERATOR_PLATFORM x64)
 set(CMAKE_CXX_STANDARD 20)
 
 
-include(CMake/lodepng.cmake)
-include(CMake/argparse.cmake)
+include("CMake/Lib_lodepng.cmake")
+include("CMake/Lib_argparse.cmake")
 
 if(MSVC)
 	add_compile_options(/W4)
@@ -26,4 +26,5 @@ else()
 	add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-add_executable(${PROJECT_NAME} SOURCE/Entry.cpp ${COMMON_SOURCES})
+add_executable(${PROJECT_NAME}-CLI SOURCE/Entry.cpp ${COMMON_SOURCES})
+add_executable(${PROJECT_NAME}-CPP SOURCE/Direct.cpp ${COMMON_SOURCES})

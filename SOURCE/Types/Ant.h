@@ -25,13 +25,13 @@ enum class DirectionEnum : int8_t {
 // @note Add 4 before indexing
 const char* DirectionStrings[] = {
 	"L135",
-	"L90",
+	"L",
 	"L45",
 
 	"C",
 
 	"R45",
-	"R90",
+	"R",
 	"R135",
 
 	"U"
@@ -60,7 +60,6 @@ CONSTEXPR int8_t c_DirectionsX[] = {  0,  1,  1,  1,  0, -1, -1, -1 }; // Index 
 CONSTEXPR int8_t c_DirectionsY[] = { -1, -1,  0,  1,  1,  1,  0, -1 }; // Index to Y direction
 CONSTEXPR int8_t c_VectorLookup[] = { 7, 0, 1, 6, 0, 2, 5, 4, 3 }; // Flattened direction to rotation
 
-template<typename CellType = CELL_TYPE, typename SizeType = SIZE_TYPE>
 class Ant {
 public:
 	Vector2<SizeType> LastPosition = {};
@@ -74,7 +73,7 @@ public:
 
 	INLINE void Rotate(int8_t Rotation) {
 		// Decode direction vector into direction index by flattening it (adding 4 as getting -4 is possible) and indexing a lookup table,
-		// add the new rotation + 8(rotation can be negative), and then mod 8
+		// add the new rotation + 8 (rotation can be negative), and then mod 8
 		int8_t CurrentDirection = (c_VectorLookup[(3 * Direction.Y + Direction.X) + 4] + Rotation + 8) % 8;
 		
 		Direction.X = c_DirectionsX[CurrentDirection];
@@ -140,5 +139,7 @@ public:
 	: Position(X, Y), Direction(DX, DY), StepSize(StepSize), Wrap(Wrap), StateMachine(StateMachine) { }
 
 	Ant(Vector2<SizeType> Position, Vector2<int8_t> Direction, std::vector<DirectionEnum> StateMachine, bool Wrap = false, SizeType StepSize = 1)
-	: Position(Position), Direction(Direction), StepSize(StepSize), Wrap(Wrap), StateMachine(StateMachine) {}
+	: Position(Position), Direction(Direction), StepSize(StepSize), Wrap(Wrap), StateMachine(StateMachine) { }
+
+	Ant() = default;
 };

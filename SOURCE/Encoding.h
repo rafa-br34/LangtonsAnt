@@ -97,14 +97,14 @@ namespace Encoding {
 				m_ThreadsSignal.wait(Lock);
 			
 			m_ThreadsActive++;
-			DEBUG_PRINT("Acquired thread(%d active)\n", (int)m_ThreadsActive);
+			DEBUG_PRINT("Acquired thread (%d active)\n", (int)m_ThreadsActive);
 		}
 
 		void ReleaseThread() {
 			std::unique_lock<std::mutex> Lock(m_ThreadsLock);
 			m_ThreadsActive--;
 			m_ThreadsSignal.notify_all();
-			DEBUG_PRINT("Released thread(%d active)\n", (int)m_ThreadsActive);
+			DEBUG_PRINT("Released thread (%d active)\n", (int)m_ThreadsActive);
 		}
 
 		void WaitJobs() {
@@ -154,12 +154,12 @@ namespace Encoding {
 
 			if (Format != ImageFormat::PNG_PALETTE) return State;
 
-			// DEBUG_PRINT("Setting up palette with %d colors (%d bits per pixel):\n", (int)StateCount, (int)BitDepth);
+			DEBUG_PRINT("Setting up palette with %d colors (%d bits per pixel):\n", (int)StateCount, (int)BitDepth);
 			Palette.ResizePalette(StateCount);
 			for (size_t i = 0; i < StateCount; i++) {
 				auto [R, G, B, A] = Palette[i].RGBA;
 
-				// DEBUG_PRINT(" %lu: %06X\n", (long unsigned int)i, Color & 0x00FFFFFF);
+				DEBUG_PRINT(" %lu: %06X\n", (long unsigned int)i, Palette[i].Color & 0x00FFFFFF);
 				lodepng_palette_add(&State.info_png.color, R, G, B, 0xFF);
 				lodepng_palette_add(&State.info_raw, R, G, B, 0xFF);
 			}
@@ -168,7 +168,7 @@ namespace Encoding {
 		}
 
 
-		template<typename Function, typename CellType, typename SizeType>
+		template<typename Function>
 		void m_EncodeBuffer(const CellType* Grid, const Vector2<SizeType>& Size, size_t StateCount, Function Callback) {
 			std::vector<uint8_t> ImageData = {};
 			lodepng::State State = m_SetupEncoderState(StateCount, 8);
@@ -180,20 +180,19 @@ namespace Encoding {
 			Callback(ImageData, Vector2<int>(Size.X, Size.Y), Result);
 		}
 
-
 	public:
 		PaletteManager Palette = {};
 		ThreadManager  Threads = {};
 		
 		ImageFormat Format = ImageFormat::PNG_PALETTE;
 
-		template<typename Function, typename CellType, typename SizeType>
-		void EncodeSync(const SimulationState<CellType, SizeType>& State, Function Callback) {
+		template<typename Function>
+		void EncodeSync(const SimulationState& State, Function Callback) {
 			m_EncodeBuffer(State.CanvasPointer, State.CanvasSize, State.PossibleStates, Callback);
 		}
 
-		template<typename Function, typename CellType, typename SizeType>
-		void EncodeSync(const SimulationState<CellType, SizeType>& State, const Vector2<SizeType>& SectionPosition, const Vector2<SizeType>& SectionSize, Function Callback) {
+		template<typename Function>
+		void EncodeSync(const SimulationState& State, const Vector2<SizeType>& SectionPosition, const Vector2<SizeType>& SectionSize, Function Callback) {
 			std::vector<CellType> Section(SectionSize.X * SectionSize.Y);
 
 			for (SizeType Y = 0; Y < SectionSize.Y; Y++) {
@@ -209,8 +208,8 @@ namespace Encoding {
 			return m_EncodeBuffer(Section.data(), SectionSize, State.PossibleStates, Callback);
 		}
 
-		template<typename Function, typename CellType, typename SizeType>
-		void EncodeAsync(const SimulationState<CellType, SizeType>& State, Function Callback) {
+		template<typename Function>
+		void EncodeAsync(const SimulationState& State, Function Callback) {
 			auto GridCopy = std::make_shared<std::vector<CellType>>();
 			auto GridSize = State.CanvasSize;
 			
@@ -223,8 +222,8 @@ namespace Encoding {
 			}).detach();
 		}
 
-		template<typename Function, typename CellType, typename SizeType>
-		void EncodeAsync(const SimulationState<CellType, SizeType>& State, const Vector2<SizeType>& SectionPosition, const Vector2<SizeType>& SectionSize, Function Callback) {
+		template<typename Function>
+		void EncodeAsync(const SimulationState& State, const Vector2<SizeType>& SectionPosition, const Vector2<SizeType>& SectionSize, Function Callback) {
 			auto Section = std::make_shared<std::vector<CellType>>(SectionSize.X * SectionSize.Y);
 
 			for (SizeType Y = 0; Y < SectionSize.Y; Y++) {

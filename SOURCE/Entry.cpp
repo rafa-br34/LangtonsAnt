@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
+#include <numeric>
 #include <fstream>
 #include <string>
 #include <thread>
@@ -21,229 +22,117 @@
 #include "Types/Vector.h"
 #include "Types/Ant.h"
 
+int main(int ArgumentCount, const char* ArgumentValues[]) {
+	argparse::ArgumentParser Parser("Langton's ant");
 
-//* @todo argument parser yay
-template<typename Type, typename SizeType=size_t>
-void BuildPossibilityList(std::vector<std::vector<Type>>& List, SizeType Size, Type* Dictionary, SizeType DictionarySize) {
-	Type* Current = new Type[Size];
-	SizeType* Counters = new SizeType[Size]{ 0 };
+	Parser.add_description("Efficient modular implementation of Langton's ant universal Turing machine which supports R45/L45, R90/L90, R135/L135, U(U turn), and C(Continue)");
 
-	for (SizeType i = 0; i < Size; i++) Current[i] = Dictionary[0];
-
-	while (Counters[Size - 1] < DictionarySize) {
+	Parser.add_argument("-x")
+		.default_value<SizeType>(1000)
+		.help("Canvas width");
 		
-		for (SizeType i = 0; i < Size; i++) Current[i] = Dictionary[Counters[i]];
-		List.push_back(std::vector<Type>(Current, Current + Size));
+	Parser.add_argument("-y")
+		.default_value<SizeType>(1000)
+		.help("Canvas height");
 
-		Counters[0]++;
-		for (SizeType i = 0; i < Size; i++) {
-			if (i + 1 < Size && Counters[i] >= DictionarySize) {
-				Counters[i] = 0;
-				Counters[i + 1]++;
-			}
-		}
-	}
-
-	delete[] Counters;
-	delete[] Current;
-}
-
-
-template<typename CellType, typename SizeType>
-void ParseArguments(int Count, const char* Values[], SimulationState<CellType, SizeType>& Simulation) {
-	argparse::ArgumentParser Program("Langton's ant");
-
-	Program.add_description("Efficient modular implementation of Langton's ant universal Turing machine which supports R45/L45, R90/L90, R135/L135, U(U turn), and C(Continue)");
-
-	Program.add_argument("-x").default_value(1000).help("Canvas width");
-	Program.add_argument("-y").default_value(1000).help("Canvas height");
-
-	Program.add_argument("-m")
+	Parser.add_argument("-m")
 		.default_value(std::vector<std::string>{"LRRRRRLLR"})
 		.append()
 		.help("Defines a state machine");
 	
-	Program.add_argument("-a")
+	Parser.add_argument("-a")
 		.default_value(std::vector<std::string>{"P(500,500)D(0,-1)M(LR)"})
 		.append()
 		.help("Defines a ant, format: \"P(X,Y)D(DX,DY)M(M)S(S)F(W?)\" can be chained using ';'");
 
-	Program.add_argument("-i")
-		.default_value("1000")
+	Parser.add_argument("-s")
+		.default_value<size_t>(1000)
 		.help("Defines when to take canvas snapshots");
 
-	Program.add_argument("-s")
+	Parser.add_argument("-t")
+		.default_value<size_t>(1)
+		.help("Defines how many encoding threads");
+
+	Parser.add_argument("-i")
 		.default_value("i5000")
-		.help("Defines how many iterations should be evaluated, i50b runs for 50b iterations, t50 runs for 50 seconds.");
+		.help("Defines how many iterations should be evaluated, i50b runs for 50b iterations, t50s runs for 50 seconds.");
+
+	Parser.add_argument("-o")
+		.default_value("frame-%d.png")
+		.help("Defines how to output frames");
+
+	Parser.add_argument("-f")
+		.default_value("pal")
+		.help("Defines the output format, available values: pal(palette) or idx(index/grayscale)");
 
 	try {
-		Program.parse_args(Count, Values);
+		Parser.parse_args(ArgumentCount, ArgumentValues);
 	}
 	catch (const std::exception& Error) {
 		std::cerr << Error.what() << std::endl;
-		std::cerr << Program;
+		std::cerr << Parser;
 		std::exit(1);
 	}
 
-	Simulation.Resize(
-		Program.get<SizeType>("-x"),
-		Program.get<SizeType>("-y")
+	SimulationState Simulation = {};
+
+	DEBUG_PRINT(
+		"Setting canvas size to %u, %u\n",
+		Parser.get<SizeType>("-x"),
+		Parser.get<SizeType>("-y")
 	);
+	
+	Simulation.Resize({
+		Parser.get<SizeType>("-x"),
+		Parser.get<SizeType>("-y")
+	});
 	
 	std::vector<std::vector<DirectionEnum>> StateMachines = {};
+	Configs::ParserStatus Result = Configs::ParserStatus::OK;
 
-	ConfigParser::ParseStateMachines(
-		Program.get<std::string>("-m"),
-		StateMachines
-	);
-	ConfigParser::ParseAnts(
-		Program.get<std::string>("-a"),
-		StateMachines,
-		Simulation.TemplateAnts
-	);
+	for (auto& String : Parser.get<std::vector<std::string>>("-m")) {
+		Result = Configs::ParseStateMachines(
+			String,
+			StateMachines
+		);
 
-	Simulation.Reset();
-}
-
-int main(int ArgCount, const char* ArgValues[]) {
-	SimulationState<uint8_t, int> Simulation = {};
-
-	ParseArguments(ArgCount, ArgValues, Simulation);
-	
-}
-//*/
-
-/*
-int main(int ArgCount, const char* ArgValues[]) {
-	using enum DirectionEnum;
-	std::vector<DirectionEnum> StateMachine = {
-		//R,R,L,L,L,R,L,L,L,R,R,R // Creates a filled triangle shape
-		//L,L,R,R,R,L,R,L,R,L,L,R // Creates a convoluted highway
-		//L,R,R,R,R,R,L,L,R // Fills space in a square around itself
-		//L,L,R,R // Grows symmetrically
-		//R,L,R // Grows chaotically
-		
-		//R,R,L,L,R,L,L,L,R
-		//R,U,R,L,R,U
-		//R,L,L,L,R,L,R,R,L,L,R,R,R // Similar to LRRRRRLLR but halts growth by iteration 8477782376
-
-		//R,L,U,L,R,L,R,R,L,L,R,R,R
-		
-		//L45,R45
-		//L45,U,R45,U
-		//L45,R45,L45,U,R45,U,L45,U,R45,U
-		
-		//R,L // Default Langton's ant
-		//U,C,L45,R45
-		//C,U,U,U,C,L45,R45,U,C,L45,R135
-		
-	};
-
-	//std::cout << "State machine: " << StateMachineToString(StateMachine, "") << '\n';
-
-	Vector2<int> CanvasSize(30720, 30720);//{ 30720, 17280 };
-
-	SimulationState<uint8_t, int> Simulation = {};
-	Encoding::PaletteManager Palette = {};
-	Encoding::ThreadManager Threads = {};
-	Encoding::EncoderState Encoder = {};
-
-	Threads.ThreadCount = 50;
-	
-	Simulation.Resize(CanvasSize);
-	
-	/*
-	std::vector<Ant<uint8_t>> Ants = {};
-	Ants.push_back(Ant<uint8_t>(Center + Vector2(0, 10), Vector2<int8_t>(0, -1), StateMachine, StateMachineSize));
-	Ants.push_back(Ant<uint8_t>(Center - Vector2(0, 10), Vector2<int8_t>(0,  1), StateMachine, StateMachineSize));
-
-	Ants.push_back(Ant<uint8_t>(Center + Vector2(10, 0), Vector2<int8_t>(-1, 0), StateMachine, StateMachineSize));
-	Ants.push_back(Ant<uint8_t>(Center - Vector2(10, 0), Vector2<int8_t>( 1, 0), StateMachine, StateMachineSize));
-	///
-	auto Center = CanvasSize / Vector2(2, 2);
-	//Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {R,L}, true));
-
-	//Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, -1), {C,C,C,C,C,C,U,C,C,C,C,C,R45,R,R45,L135,U,C,U,L,L,R135,L45,R45,R,R135,L45,R,R,R45}, true));
-	
-	Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, 1), {R,L,R,R,L,R,R,L,R,R,L,R}, true));
-	Simulation.AddAnt(Ant<uint8_t>(Center, Vector2<int8_t>(0, 1), {R,L,C}, true));
-
-	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 output.mp4
-	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 -s 1920x1920 output.mp4
-	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 -s 1920x1920 -sws_flags neighbor output.mp4
-	// ffmpeg -r 30 -i "Frames/%d.png" -c:v libx264 -preset veryslow -qp 0 -s 7680x4320 output.mp4
-	// ./LangtonsAnt | ~/ffmpeg/ffmpeg -y -f rawvideo -pix_fmt rgb24 -s 30720x30720 -r 30 -i - -c:v libx264 -preset veryslow -s 7680x7680 output.h264
-	// ./LangtonsAnt | ~/ffmpeg/ffmpeg -y -f rawvideo -pix_fmt rgb24 -s 1920x1920 -r 30 -i - -c:v libx264 -preset veryslow -s 1920x1920 output.h264
-	
-	// 1ull * 1000000000ull 1b
-	// 1ull * 1000000ull 1m
-
-	size_t Iterations = 2ull * 1000000000ull;
-	double FrameRate = 3.0; // Video frame rate
-	double Time = 1.0; // Video time
-	size_t Frames = size_t(Time * FrameRate);
-	
-	size_t CaptureDelta = size_t(double(Iterations) / double(Frames));
-
-	Simulation.Reset();
-	Palette.ResizePalette(Simulation.PossibleStates);
-	Encoder.Threads.ThreadCount = 2;
-	Encoder.Format = Encoding::ImageFormat::PNG_GRAYSCALE;
-
-	std::mutex Mutex = {};
-	size_t CurrentFrame = 0;
-
-	for (size_t i = 0; i < Frames; i++) {
-		Simulation.Simulate(CaptureDelta);//std::cout << "i:" << i << ' ' << Simulation.Simulate(CaptureDelta) << '/' << CaptureDelta << '\n';
-		
-		/*
-		auto GridCopy = std::make_shared<std::vector<uint8_t>>();
-		
-		GridCopy->assign(Simulation.CanvasPointer, Simulation.CanvasPointer + CanvasSize.X * CanvasSize.Y);
-
-		Threads.AcquireThread();
-		std::thread([&, GridCopy, i]() {
-			uint8_t* Canvas = GridCopy->data();
-
-			uint8_t* Image = new uint8_t[Center.X * Center.Y * 3];
-
-			auto Start = std::chrono::high_resolution_clock::now();
-			for (int X = 0; X < Center.X; X++) {
-				for (int Y = 0; Y < Center.Y; Y++) {
-					//
-					auto C00 = Palette[Canvas[FLATTEN_2D(X * 2 + 0, Y * 2 + 0, CanvasSize.X)]].RGBA;
-					auto C01 = Palette[Canvas[FLATTEN_2D(X * 2 + 0, Y * 2 + 1, CanvasSize.X)]].RGBA;
-					auto C10 = Palette[Canvas[FLATTEN_2D(X * 2 + 1, Y * 2 + 0, CanvasSize.X)]].RGBA;
-					auto C11 = Palette[Canvas[FLATTEN_2D(X * 2 + 1, Y * 2 + 1, CanvasSize.X)]].RGBA;
-
-					size_t Index = FLATTEN_2D(X, Y, Center.X) * 3;
-
-					Image[Index + 0] = uint8_t(((float)C00.R + (float)C01.R + (float)C10.R + (float)C11.R) / 4.f);
-					Image[Index + 1] = uint8_t(((float)C00.G + (float)C01.G + (float)C10.G + (float)C11.G) / 4.f);
-					Image[Index + 2] = uint8_t(((float)C00.B + (float)C01.B + (float)C10.B + (float)C11.B) / 4.f);
-					///
-				}
-			}
-			auto Elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - Start);
-
-			while (CurrentFrame != i)
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-			Mutex.lock();
-			std::cerr << "Frame " << CurrentFrame << " Took " << Elapsed << " seconds\n";
-			fwrite(Image, 1, Center.X * Center.Y * 3, stdout);
-			CurrentFrame++;
-			Mutex.unlock();
-			
-			delete[] Image;
-
-			Threads.ReleaseThread();
-		}).detach();
-		/
-		
-		Encoder.EncodeAsync(Simulation, [&, i](const std::vector<uint8_t>& ImageData, const Vector2<int>&, unsigned int) {
-			lodepng::save_file(ImageData, "Frames/" + std::to_string(i) + ".png");
-		});
+		if (Result != Configs::ParserStatus::OK) {
+			std::cerr << "Failed to parse state machine \"" << String << "\" with status " << Configs::ErrorCodes[(int)Result] << '\n';
+			return 1;
+		}
 	}
+
+	DEBUG_PRINT("StateMachines:\n");
+	for (auto& Item : StateMachines)
+		DEBUG_PRINT("\t%s\n", StateMachineToString(Item).c_str());
+	
+	for (auto& String : Parser.get<std::vector<std::string>>("-a")) {
+		Result = Configs::ParseAnts(
+			String,
+			StateMachines,
+			Simulation.TemplateAnts
+		);
+
+		if (Result != Configs::ParserStatus::OK) {
+			std::cerr << "Failed to parse ant \"" << String << "\" with status " << Configs::ErrorCodes[(int)Result] << '\n';
+			return 1;
+		}
+	}
+
+	Configs::Timing EvalCondition = {};
+	size_t SaveIters = Parser.get<size_t>("-s");
+
+	Result = Configs::ParseTiming(Parser.get<std::string>("-i"), &EvalCondition);
+
+	if (Result != Configs::ParserStatus::OK) {
+		std::cerr << "Failed to parse evaluation condition with status " << Configs::ErrorCodes[(int)Result] << '\n';
+		return 1;
+	}
+
+	Simulation.Reset();
+
+	size_t Iterations = 0;
+	auto Start = std::chrono::high_resolution_clock::now();
+
+	
 }
-*/

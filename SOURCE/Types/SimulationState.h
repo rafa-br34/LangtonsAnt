@@ -10,7 +10,6 @@
 #include "Vector.h"
 #include "Ant.h"
 
-template<typename CellType = CELL_TYPE, typename SizeType = SIZE_TYPE>
 class SimulationState {
 private:
 	void m_Deallocate() {
@@ -25,15 +24,15 @@ private:
 			CanvasPointer = new CellType[CanvasSize.X * CanvasSize.Y]{};
 	}
 public:
-	std::vector<Ant<CellType, SizeType>> TemplateAnts = {};
-	std::vector<Ant<CellType, SizeType>> Ants = {};
+	std::vector<Ant> TemplateAnts = {};
+	std::vector<Ant> Ants = {};
 
 	uint8_t*          CanvasPointer = nullptr;
 	Vector2<SizeType> CanvasSize = { 0, 0 };
 
 	CellType PossibleStates = 0;
 
-	void AddAnt(const Ant<CellType, SizeType>& AntObject) {
+	void AddAnt(const Ant& AntObject) {
 		TemplateAnts.push_back(AntObject);
 		PossibleStates = std::max(PossibleStates, (CellType)AntObject.StateMachine.size());
 	}
@@ -54,7 +53,8 @@ public:
 	}
 
 	size_t Simulate(size_t Iterations = 1) {
-		if (Ants.empty()) return 0;
+		if (Ants.empty())
+			return 0;
 		
 		size_t Iterated = 0;
 
@@ -88,7 +88,7 @@ public:
 		m_Allocate();
 
 		if (ResetCanvas) {
-			memset(CanvasPointer, 0, CanvasSize.X * CanvasSize.Y);
+			std::memset(CanvasPointer, 0, CanvasSize.X * CanvasSize.Y);
 		}
 		if (ResetAnts) {
 			Ants.clear();
