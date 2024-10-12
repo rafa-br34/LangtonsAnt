@@ -71,7 +71,7 @@ public:
 	
 	std::vector<DirectionEnum> StateMachine = {};
 
-	INLINE void Rotate(int8_t Rotation) {
+	inline void Rotate(int8_t Rotation) {
 		// Decode direction vector into direction index by flattening it (adding 4 as getting -4 is possible) and indexing a lookup table,
 		// add the new rotation + 8 (rotation can be negative), and then mod 8
 		int8_t CurrentDirection = (c_VectorLookup[(3 * Direction.Y + Direction.X) + 4] + Rotation + 8) % 8;
@@ -80,13 +80,13 @@ public:
 		Direction.Y = c_DirectionsY[CurrentDirection];
 	}
 
-	INLINE bool ValidatePosition(const Vector2<SizeType>& GridSize) {
+	inline bool ValidatePosition(const Vector2<SizeType>& GridSize) {
 		// Check if the last update has landed us in a invalid position
 		// Positive out of bounds checks go first since a overflow will also trigger them
 		return Position.X < GridSize.X && Position.Y < GridSize.Y && Position.X >= 0 && Position.Y >= 0;
 	}
 
-	INLINE void WrapPosition(const Vector2<SizeType>& GridSize) {
+	inline void WrapPosition(const Vector2<SizeType>& GridSize) {
 		if (Position.X >= GridSize.X) Position.X = 0;
 		if (Position.Y >= GridSize.Y) Position.Y = 0;
 		if (Position.X < 0) Position.X = GridSize.X - 1;
@@ -94,7 +94,7 @@ public:
 	}
 
 	// Single step update (used for a single ant)
-	INLINE uint8_t Update(CellType* Grid, const Vector2<SizeType>& GridSize) {
+	inline uint8_t Update(CellType* Grid, const Vector2<SizeType>& GridSize) {
 		auto& Dir = Direction;
 		auto& Pos = Position;
 
@@ -112,7 +112,7 @@ public:
 	}
 
 	// Double step update (used for multiple ants)
-	INLINE void UpdatePosition(const CellType* Grid, const Vector2<SizeType>& GridSize) {
+	inline void UpdatePosition(const CellType* Grid, const Vector2<SizeType>& GridSize) {
 		auto& Last = LastPosition;
 		auto& Dir  = Direction;
 		auto& Pos  = Position;
@@ -124,7 +124,7 @@ public:
 		if (Wrap) WrapPosition(GridSize);
 	}
 
-	INLINE uint8_t UpdateCell(CellType* Grid, const Vector2<SizeType>& GridSize) {
+	inline uint8_t UpdateCell(CellType* Grid, const Vector2<SizeType>& GridSize) {
 		auto& Last = LastPosition;
 
 		if (!ValidatePosition(GridSize)) return 0;

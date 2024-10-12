@@ -26,7 +26,7 @@ int main() {
 		RLRRLRRLRRLR & RLC When initializing both ants at the center (+/- 1 pixel tolerance on the y axis) with the same direction a prism with complex patterns is made
 	*/
 
-	Vector2<int> CanvasSize(30720, 30720);
+	Vector2<SizeType> CanvasSize(65535, 65535);
 	auto Center = CanvasSize / Vector2(2, 2);
 
 	SimulationState          Simulation = {};
@@ -41,7 +41,7 @@ int main() {
 	Simulation.Reset();
 	Palette.ResizePalette(Simulation.PossibleStates);
 	
-	Encoder.Threads.ThreadCount = 1;
+	Encoder.Threads.ThreadCount = 32;
 	Encoder.Format = Encoding::ImageFormat::PNG_PALETTE;
 
 	// ffmpeg -r 60 -i "Frames/%d.png" -b:v 5M -c:v libx264 -preset veryslow -qp 0 output.mp4
@@ -56,8 +56,8 @@ int main() {
 		std::cout << '\t' << StateMachineToString(Ant.StateMachine) << '\n';
 	
 
-	size_t Iterations = 2ull * 1000000000ull;
-	double FrameRate = 10.0; // Video frame rate
+	size_t Iterations = 32ull * 1000000000ull;
+	double FrameRate = 128.0; // Video frame rate
 	double Time = 1.0; // Video time
 	size_t Frames = size_t(Time * FrameRate);
 	
@@ -66,7 +66,7 @@ int main() {
 	for (size_t i = 0; i < Frames; i++) {
 		size_t Result = Simulation.Simulate(CaptureDelta);
 
-		printf("Frame: %llu Iters: %llu/%llu\n", i, Result, CaptureDelta);
+		printf("Frame: %lu Iters: %lu/%lu Threads: %lu\n", i, Result, CaptureDelta, Encoder.Threads.ActiveThreads());
 		
 		Encoder.EncodeAsync(Simulation, [&, i](const std::vector<uint8_t>& ImageData, const Vector2<int>&, unsigned int) {
 			lodepng::save_file(ImageData, "frames/" + std::to_string(i) + ".png");
