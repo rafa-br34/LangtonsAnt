@@ -62,22 +62,22 @@ namespace Encoding {
 				m_Palette.push_back(ColoringProcedure(s));
 		}
 
-		INLINE size_t GetSize() const {
+		inline size_t GetSize() const {
 			return m_Palette.size();
 		}
 
-		INLINE RGBA32 GetColor(size_t Index) {
+		inline RGBA32 GetColor(size_t Index) {
 			if (Index + 1 > m_Palette.size())
 				ResizePalette(Index + 1);
 
 			return m_Palette[Index];
 		}
 
-		INLINE RGBA32* GetData() {
+		inline RGBA32* GetData() {
 			return m_Palette.data();
 		}
 
-		INLINE RGBA32 operator[](size_t Index) {
+		inline RGBA32 operator[](size_t Index) {
 			return m_Palette[Index];
 		}
 	};
@@ -177,7 +177,7 @@ namespace Encoding {
 
 			ASSERT_MSG(Result == 0, "lodepng::encode -> %d\n", Result);
 
-			Callback(ImageData, Vector2<int>(Size.X, Size.Y), Result);
+			Callback(ImageData, Vector2<SizeType>(Size.X, Size.Y), Result);
 		}
 
 	public:

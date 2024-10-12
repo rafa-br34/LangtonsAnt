@@ -65,10 +65,14 @@ int main() {
 
 	for (size_t i = 0; i < Frames; i++) {
 		size_t Result = Simulation.Simulate(CaptureDelta);
-
-		printf("Frame: %lu Iters: %lu/%lu Threads: %lu\n", i, Result, CaptureDelta, Encoder.Threads.ActiveThreads());
 		
-		Encoder.EncodeAsync(Simulation, [&, i](const std::vector<uint8_t>& ImageData, const Vector2<int>&, unsigned int) {
+		std::cout
+		<< "Frame: " << i
+		<< " Iters: " << Result << '/' << CaptureDelta
+		<< " Active threads: " << Encoder.Threads.ActiveThreads()
+		<< '\n';
+		
+		Encoder.EncodeAsync(Simulation, [&, i](const std::vector<uint8_t>& ImageData, const Vector2<SizeType>&, unsigned int) {
 			lodepng::save_file(ImageData, "frames/" + std::to_string(i) + ".png");
 		});
 	}

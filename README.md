@@ -12,7 +12,8 @@ The web version can be found [here](https://rafa-br34.github.io/LangtonsAnt)
 - [Implementation notes](#implementation-notes)
 - [Usage](#usage)
   - [Web version](#web-version)
-  - [C++ version](#c-version)
+  - [C++ versions](#c-versions)
+    - [`Direct.cpp` VS `Interface.cpp`](#directcpp-vs-interfacecpp)
     - [Building](#building)
     - [Arguments](#arguments)
       - [`-x` \& `-y`](#-x---y)
@@ -25,7 +26,7 @@ The web version can be found [here](https://rafa-br34.github.io/LangtonsAnt)
 
 # Implementation notes
 
-Both the C++ ([Ant.h](https://github.com/rafa-br34/LangtonsAnt/blob/master/SOURCE/Types/Ant.h)) and JavaScript ([Ant.js](https://github.com/rafa-br34/LangtonsAnt/blob/master/WEBSITE/Scripts/Ant.js)) version share the same implementation concept.
+The JavaScript ([Ant.js](https://github.com/rafa-br34/LangtonsAnt/blob/master/WEBSITE/Scripts/Ant.js)) version is basically a line by line rewrite of the C++ ([Ant.h](https://github.com/rafa-br34/LangtonsAnt/blob/master/SOURCE/Types/Ant.h)) version (in the future this may change).  
 There's support for 8 possible operations, which are:
 
 - R45/L45
@@ -40,9 +41,16 @@ There's support for 8 possible operations, which are:
 
 Placeholder
 
-## C++ version
+## C++ versions
+
+### `Direct.cpp` VS `Interface.cpp`
+
+The `Direct.cpp` file is an example implementation of how you can use this repo to implement your own Langton's ant simulation.  
+The `Interface.cpp` file on the other hand is a simple CLI that allows you to mess around without prior C/C++ knowledge.
 
 ### Building
+
+The following works for both Linux and Windows.
 
 ```bash
 git clone --recursive https://github.com/rafa-br34/LangtonsAnt.git

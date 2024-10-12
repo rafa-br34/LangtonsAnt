@@ -26,5 +26,5 @@ else()
 	add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-add_executable(${PROJECT_NAME}-CLI SOURCE/Entry.cpp ${COMMON_SOURCES})
-add_executable(${PROJECT_NAME}-CPP SOURCE/Direct.cpp ${COMMON_SOURCES})
+add_executable(Interface SOURCE/Interface.cpp ${COMMON_SOURCES})
+add_executable(Direct SOURCE/Direct.cpp ${COMMON_SOURCES})
