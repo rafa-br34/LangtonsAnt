@@ -9,29 +9,30 @@ The web version can be found [here](https://rafa-br34.github.io/LangtonsAnt)
 
 ## Table of contents
 
-* [Implementation notes](#implementation-notes)
-* [Usage](#usage)
-  * [Web version](#web-version)
-  * [C++ version](#c-version)
-    * [Arguments](#arguments)
-      * [`-x` & `-y`](#-x---y)
-      * [`-m`](#-m)
-      * [`-a`](#-a)
-      * [`-i`](#-i)
-      * [`-s`](#-s)
-      * [`-o`](#-o)
-      * [`-t`](#-t)
+- [Implementation notes](#implementation-notes)
+- [Usage](#usage)
+  - [Web version](#web-version)
+  - [C++ version](#c-version)
+    - [Building](#building)
+    - [Arguments](#arguments)
+      - [`-x` \& `-y`](#-x---y)
+      - [`-m`](#-m)
+      - [`-a`](#-a)
+      - [`-i`](#-i)
+      - [`-s`](#-s)
+      - [`-o`](#-o)
+      - [`-t`](#-t)
 
 # Implementation notes
 
 Both the C++ ([Ant.h](https://github.com/rafa-br34/LangtonsAnt/blob/master/SOURCE/Types/Ant.h)) and JavaScript ([Ant.js](https://github.com/rafa-br34/LangtonsAnt/blob/master/WEBSITE/Scripts/Ant.js)) version share the same implementation concept.
 There's support for 8 possible operations, which are:
 
-* R45/L45
-* R90/L90 (or R/L)
-* R135/L135
-* C (continue)
-* U (180 degree turn)
+- R45/L45
+- R90/L90 (or R/L)
+- R135/L135
+- C (continue)
+- U (180 degree turn)
 
 # Usage
 
@@ -40,6 +41,17 @@ There's support for 8 possible operations, which are:
 Placeholder
 
 ## C++ version
+
+### Building
+
+```bash
+git clone --recursive https://github.com/rafa-br34/LangtonsAnt.git
+cd LangtonsAnt
+mkdir build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . -j 32 --
+```
 
 ### Arguments
 
