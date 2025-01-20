@@ -68,8 +68,10 @@ async function Main() {
 	}
 
 	function LoadSiteLink() {
-		let Encoded = (new URL(window.location.href)).searchParams.get("v")
-		if (!Encoded) { return }
+		let Encoded = new URL(window.location.href).searchParams.get("v")
+		
+		if (!Encoded)
+			return
 
 		let Compressed = new Uint8Array(atob(decodeURIComponent(Encoded)).split('').map(Value => Value.charCodeAt(0)))
 
