@@ -98,7 +98,8 @@ public:
 		auto& Dir = Direction;
 		auto& Pos = Position;
 
-		if (!ValidatePosition(GridSize)) return 0;
+		if (!ValidatePosition(GridSize))
+			return 0;
 
 		CellType* Cell = Grid + FLATTEN_2D(Pos.X, Pos.Y, GridSize.X);
 		
@@ -107,7 +108,9 @@ public:
 
 		*Cell = (*Cell + 1) % StateMachine.size();
 		
-		if (Wrap) WrapPosition(GridSize);
+		if (Wrap)
+			WrapPosition(GridSize);
+		
 		return 1;
 	}
 
@@ -121,13 +124,15 @@ public:
 		Last = Pos;
 		Pos += Dir * StepSize;
 
-		if (Wrap) WrapPosition(GridSize);
+		if (Wrap)
+			WrapPosition(GridSize);
 	}
 
 	inline uint8_t UpdateCell(CellType* Grid, const Vector2<SizeType>& GridSize) {
 		auto& Last = LastPosition;
 
-		if (!ValidatePosition(GridSize)) return 0;
+		if (!ValidatePosition(GridSize))
+			return 0;
 
 		CellType* Cell = Grid + FLATTEN_2D(Last.X, Last.Y, GridSize.X);
 		*Cell = (*Cell + 1) % StateMachine.size();
